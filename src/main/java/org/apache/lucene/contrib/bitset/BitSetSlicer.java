@@ -19,32 +19,32 @@
 
 package org.apache.lucene.contrib.bitset;
 
-import org.apache.lucene.search.DocIdSet;
-
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.concurrent.Callable;
 
+import org.apache.lucene.util.OpenBitSet;
+
 abstract class BitSetSlicer<T> {
 
-  public Collection<Callable<T>> sliceBitsets(DocIdSet[] bs) {
-    int sliceSize = bs.length / Runtime.getRuntime().availableProcessors();
+  public Collection<Callable<T>> sliceBitsets(OpenBitSet bs) {
+    int sliceSize = ((int) bs.capacity()) / Runtime.getRuntime().availableProcessors();
 
-    int numOfOps = bs.length / sliceSize;
-    if (bs.length % sliceSize != 0) {
+    int numOfOps = ((int) bs.capacity()) / sliceSize;
+    if (bs.capacity() % sliceSize != 0) {
       numOfOps++;
     }
 
     Collection<Callable<T>> ops = new LinkedList<Callable<T>>();
     for (int i = 0; i < numOfOps; i++) {
       int startIndex = i * sliceSize;
-      ops.add(newOpCallable(bs, startIndex, lastIndex(bs.length, startIndex, sliceSize)));
+      ops.add(newOpCallable(bs, startIndex, lastIndex(bs.capacity(), startIndex, sliceSize)));
     }
 
     return ops;
   }
 
-  protected abstract Callable<T> newOpCallable(DocIdSet[] bs, int startIndex, int i);
+  protected abstract Callable<T> newOpCallable(OpenBitSet bs, int startIndex, int i);
 
   private int lastIndex(int numberOfBitsets, int startIndex, int sliceSize) {
     int remaining = numberOfBitsets - startIndex;

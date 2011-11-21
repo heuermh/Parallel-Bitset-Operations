@@ -19,29 +19,20 @@
 
 package org.apache.lucene.contrib.bitset.ops;
 
-import org.apache.lucene.search.DocIdSet;
 import org.apache.lucene.util.OpenBitSet;
-import org.apache.lucene.util.OpenBitSetDISI;
-import org.apache.lucene.util.SortedVIntList;
 
 import java.io.IOException;
 
 public class OR implements AssociativeOp {
 
   @Override
-  public void compute(OpenBitSetDISI accumulator, DocIdSet bitset) throws IOException {
-    if (bitset instanceof OpenBitSet) {
-      accumulator.or((OpenBitSet) bitset);
-    } else if (bitset instanceof SortedVIntList) {
-      accumulator.inPlaceOr(bitset.iterator());
-    } else {
-      throw new IllegalArgumentException("Not supported:" + bitset);
-    }
+  public void compute(OpenBitSet accumulator, OpenBitSet bitset) throws IOException {
+    accumulator.or(bitset);
   }
 
   @Override
-  public OpenBitSetDISI newAccumulator(int bitsetSize, DocIdSet b) throws IOException {
-    return new OpenBitSetDISI(b.iterator(), bitsetSize);
+  public OpenBitSet newAccumulator(int bitsetSize, OpenBitSet b) throws IOException {
+    return new OpenBitSet(b.iterator(), bitsetSize);
   }
 
 }

@@ -1,6 +1,6 @@
 /*
  * Parallel Bitset Operations
- * Copyright (C) 2011 Federico Fissore
+ * Copyright (C) 2011 Federico Fissore, Michael Heuer
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,23 +16,3 @@
  * Public License along with this library; if not, see
  * http://www.gnu.org/licenses/lgpl-3.0.txt
  */
-
-package org.apache.lucene.contrib.bitset.ops;
-
-import org.apache.lucene.util.OpenBitSet;
-
-import java.io.IOException;
-
-public class XOR implements AssociativeOp {
-
-  @Override
-  public void compute(OpenBitSet accumulator, OpenBitSet bitset) throws IOException {
-    accumulator.xor((OpenBitSet) bitset);
-  }
-
-  @Override
-  public OpenBitSet newAccumulator(int bitsetSize, OpenBitSet b) throws IOException {
-    return new OpenBitSet(b.iterator(), bitsetSize);
-  }
-
-}

@@ -21,8 +21,7 @@ package org.apache.lucene.contrib.bitset;
 
 import org.apache.lucene.contrib.bitset.ops.AssociativeOp;
 import org.apache.lucene.contrib.bitset.ops.ComparisonOp;
-import org.apache.lucene.search.DocIdSet;
-import org.apache.lucene.util.OpenBitSetDISI;
+import org.apache.lucene.util.OpenBitSet;
 
 import java.util.Collection;
 import java.util.List;
@@ -68,28 +67,28 @@ public class BitsetOperationsExecutor {
    * @param bs              the bitsets on to compute the operation
    * @param finalBitsetSize the final bitset size (tipically IndexReader.numDocs())
    * @param operation       the operation to perform
-   * @return an OpenBitSetDISI, result of the operation
+   * @return an OpenBitSet, result of the operation
    * @throws Exception
    */
-  public OpenBitSetDISI perform(DocIdSet[] bs, final int finalBitsetSize, final AssociativeOp operation) throws Exception {
-    if (bs.length <= minArraySize) {
-      return new AssociativeOpCallable(bs, 0, bs.length, finalBitsetSize, operation).call();
+  public OpenBitSet perform(OpenBitSet bs, final int finalBitsetSize, final AssociativeOp operation) throws Exception {
+    if (bs.capacity() <= minArraySize) {
+        return new AssociativeOpCallable(bs, 0, bs.capacity(), finalBitsetSize, operation).call();
     }
 
-    Collection<Callable<OpenBitSetDISI>> ops = new BitSetSlicer<OpenBitSetDISI>() {
+    Collection<Callable<OpenBitSet>> ops = new BitSetSlicer<OpenBitSet>() {
 
       @Override
-      protected Callable<OpenBitSetDISI> newOpCallable(DocIdSet[] bs, int fromIndex, int toIndex) {
+      protected Callable<OpenBitSet> newOpCallable(OpenBitSet bs, int fromIndex, int toIndex) {
         return new AssociativeOpCallable(bs, fromIndex, toIndex, finalBitsetSize, operation);
       }
 
     }.sliceBitsets(bs);
 
-    List<Future<OpenBitSetDISI>> futures = threadPool.invokeAll(ops);
+    List<Future<OpenBitSet>> futures = threadPool.invokeAll(ops);
 
-    OpenBitSetDISI[] accumulated = ArrayUtils.toArray(futures);
+    OpenBitSet[] accumulated = ArrayUtils.toArray(futures);
 
-    return new AssociativeOpCallable(accumulated, 0, accumulated.length, finalBitsetSize, operation).call();
+    return new AssociativeOpCallable(accumulated, 0, accumulated.capacity(), finalBitsetSize, operation).call();
   }
 
   /**
@@ -103,19 +102,19 @@ public class BitsetOperationsExecutor {
    * @return an array of objects (whose type is defined by the operation). The array has the same size of the input array of bitsets and order is preserved so the result of the operation performed at bs[N] is at position N in the returned array
    * @throws Exception
    */
-  public <T> T[] perform(DocIdSet[] bs, DocIdSet toCompare, final int finalBitsetSize, final ComparisonOp<T> operation) throws Exception {
-    final OpenBitSetDISI toCompareDisi = new OpenBitSetDISI(finalBitsetSize);
-    toCompareDisi.inPlaceOr(toCompare.iterator());
+  public <T> T[] perform(OpenBitSet bs, OpenBitSet toCompare, final int finalBitsetSize, final ComparisonOp<T> operation) throws Exception {
+    final OpenBitSet toCompareBs = new OpenBitSet(finalBitsetSize);
+    toCompareBs.inPlaceOr(toCompare.iterator());
 
-    if (bs.length <= minArraySize) {
-      return new ComparisonOpCallable<T>(bs, 0, bs.length, finalBitsetSize, toCompareDisi, operation).call();
+    if (bs.capacity() <= minArraySize) {
+      return new ComparisonOpCallable<T>(bs, 0, bs.capacity(), finalBitsetSize, toCompareBs, operation).call();
     }
 
     Collection<Callable<T[]>> ops = new BitSetSlicer<T[]>() {
 
       @Override
-      protected Callable<T[]> newOpCallable(DocIdSet[] bs, int fromIndex, int toIndex) {
-        return new ComparisonOpCallable<T>(bs, fromIndex, toIndex, finalBitsetSize, toCompareDisi, operation);
+      protected Callable<T[]> newOpCallable(OpenBitSet bs, int fromIndex, int toIndex) {
+        return new ComparisonOpCallable<T>(bs, fromIndex, toIndex, finalBitsetSize, toCompareBs, operation);
       }
 
     }.sliceBitsets(bs);

@@ -19,9 +19,7 @@
 
 package org.apache.lucene.contrib.bitset.ops;
 
-import org.apache.lucene.search.DocIdSet;
 import org.apache.lucene.util.OpenBitSet;
-import org.apache.lucene.util.OpenBitSetDISI;
 
 import java.io.IOException;
 
@@ -41,6 +39,6 @@ public interface ComparisonOp<T> {
    * @return the result of the comparison (for example, a number for {@link IntersectionCount})
    * @throws IOException
    */
-  T compute(OpenBitSetDISI accumulator, DocIdSet target, OpenBitSet toCompare) throws IOException;
+  T compute(OpenBitSet accumulator, OpenBitSet target, OpenBitSet toCompare) throws IOException;
 
 }

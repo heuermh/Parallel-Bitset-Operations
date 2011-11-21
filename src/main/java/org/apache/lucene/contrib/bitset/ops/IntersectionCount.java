@@ -19,25 +19,14 @@
 
 package org.apache.lucene.contrib.bitset.ops;
 
-import org.apache.lucene.search.DocIdSet;
 import org.apache.lucene.util.OpenBitSet;
-import org.apache.lucene.util.OpenBitSetDISI;
-import org.apache.lucene.util.SortedVIntList;
 
 import java.io.IOException;
 
 public class IntersectionCount implements ComparisonOp<Long> {
 
   @Override
-  public Long compute(OpenBitSetDISI accumulator, DocIdSet target, OpenBitSet toCompare) throws IOException {
-    if (target instanceof OpenBitSet) {
-      return OpenBitSet.intersectionCount((OpenBitSet) target, toCompare);
-    } else if (target instanceof SortedVIntList) {
-      accumulator.clear(0, accumulator.capacity());
-      accumulator.inPlaceOr(target.iterator());
-      return OpenBitSet.intersectionCount(accumulator, toCompare);
-    } else {
-      throw new IllegalArgumentException("Not supported:" + target);
-    }
+  public Long compute(OpenBitSet accumulator, OpenBitSet target, OpenBitSet toCompare) throws IOException {
+    return OpenBitSet.intersectionCount((OpenBitSet) target, toCompare);
   }
 }

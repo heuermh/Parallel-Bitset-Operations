@@ -19,8 +19,7 @@
 
 package org.apache.lucene.contrib.bitset.ops;
 
-import org.apache.lucene.search.DocIdSet;
-import org.apache.lucene.util.OpenBitSetDISI;
+import org.apache.lucene.util.OpenBitSet;
 
 import java.io.IOException;
 
@@ -36,7 +35,7 @@ public interface AssociativeOp {
    * @param bitset      the bitset from where to get the bits
    * @throws IOException if an error occurs when getting the bits
    */
-  void compute(OpenBitSetDISI accumulator, DocIdSet bitset) throws IOException;
+  void compute(OpenBitSet accumulator, OpenBitSet bitset) throws IOException;
 
-  OpenBitSetDISI newAccumulator(int bitsetSize, DocIdSet b) throws IOException;
+  OpenBitSet newAccumulator(int bitsetSize, OpenBitSet b) throws IOException;
 }

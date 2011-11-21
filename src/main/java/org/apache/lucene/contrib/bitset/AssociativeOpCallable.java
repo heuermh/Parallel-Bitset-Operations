@@ -20,21 +20,20 @@
 package org.apache.lucene.contrib.bitset;
 
 import org.apache.lucene.contrib.bitset.ops.AssociativeOp;
-import org.apache.lucene.search.DocIdSet;
-import org.apache.lucene.util.OpenBitSetDISI;
+import org.apache.lucene.util.OpenBitSet;
 
-class AssociativeOpCallable extends AbstractOpCallable<OpenBitSetDISI> {
+class AssociativeOpCallable extends AbstractOpCallable<OpenBitSet> {
 
   private final AssociativeOp operation;
 
-  public AssociativeOpCallable(DocIdSet[] bs, int fromIndex, int toIndex, int finalBitsetSize, AssociativeOp operation) {
+  public AssociativeOpCallable(OpenBitSet bs, int fromIndex, int toIndex, int finalBitsetSize, AssociativeOp operation) {
     super(bs, fromIndex, toIndex, finalBitsetSize);
     this.operation = operation;
   }
 
   @Override
-  public OpenBitSetDISI call() throws Exception {
-    OpenBitSetDISI accumulator = operation.newAccumulator(finalBitsetSize, bs[fromIndex]);
+  public OpenBitSet call() throws Exception {
+    OpenBitSet accumulator = operation.newAccumulator(finalBitsetSize, bs.fastGet(fromIndex));
     for (int i = fromIndex + 1; i < toIndex; i++) {
       operation.compute(accumulator, bs[i]);
     }

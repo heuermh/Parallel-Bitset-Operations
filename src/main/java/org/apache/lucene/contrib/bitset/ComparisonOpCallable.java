@@ -20,16 +20,14 @@
 package org.apache.lucene.contrib.bitset;
 
 import org.apache.lucene.contrib.bitset.ops.ComparisonOp;
-import org.apache.lucene.search.DocIdSet;
 import org.apache.lucene.util.OpenBitSet;
-import org.apache.lucene.util.OpenBitSetDISI;
 
 class ComparisonOpCallable<T> extends AbstractOpCallable<T[]> {
 
   private final OpenBitSet toCompare;
   private final ComparisonOp<T> operation;
 
-  public ComparisonOpCallable(DocIdSet[] bs, int fromIndex, int toIndex, int finalBitsetSize, OpenBitSet toCompare, ComparisonOp<T> operation) {
+  public ComparisonOpCallable(OpenBitSet bs, int fromIndex, int toIndex, int finalBitsetSize, OpenBitSet toCompare, ComparisonOp<T> operation) {
     super(bs, fromIndex, toIndex, finalBitsetSize);
     this.toCompare = toCompare;
     this.operation = operation;
@@ -38,10 +36,10 @@ class ComparisonOpCallable<T> extends AbstractOpCallable<T[]> {
   @SuppressWarnings({"unchecked"})
   @Override
   public T[] call() throws Exception {
-    OpenBitSetDISI accumulator = new OpenBitSetDISI(finalBitsetSize);
+    OpenBitSet accumulator = new OpenBitSet(finalBitsetSize);
 
-    OpenBitSetDISI toCompareDisi = new OpenBitSetDISI(finalBitsetSize);
-    toCompareDisi.inPlaceOr(toCompare.iterator());
+    OpenBitSet toCompareBs = new OpenBitSet(finalBitsetSize);
+    toCompareBs.inPlaceOr(toCompare.iterator());
 
     Object[] result = new Object[toIndex - fromIndex];
     for (int i = fromIndex; i < toIndex; i++) {

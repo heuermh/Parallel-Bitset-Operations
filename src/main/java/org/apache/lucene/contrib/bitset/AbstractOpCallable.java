@@ -19,25 +19,25 @@
 
 package org.apache.lucene.contrib.bitset;
 
-import org.apache.lucene.search.DocIdSet;
-
 import java.util.concurrent.Callable;
+
+import org.apache.lucene.util.OpenBitSet;
 
 abstract class AbstractOpCallable<T> implements Callable<T> {
 
-  protected final DocIdSet[] bs;
+  protected final OpenBitSet bs;
   protected final int finalBitsetSize;
   protected final int fromIndex;
   protected final int toIndex;
 
-  public AbstractOpCallable(DocIdSet[] bs, int fromIndex, int toIndex, int finalBitsetSize) {
+  public AbstractOpCallable(OpenBitSet bs, int fromIndex, int toIndex, int finalBitsetSize) {
     this.bs = bs;
     this.fromIndex = fromIndex;
     this.toIndex = toIndex;
     this.finalBitsetSize = finalBitsetSize;
 
-    if (bs.length == 0) {
-      throw new IllegalArgumentException("DocIdSet array cannot be empty");
+    if (bs.capacity() == 0) {
+      throw new IllegalArgumentException("OpenBitSet cannot be empty");
     }
   }
 }
