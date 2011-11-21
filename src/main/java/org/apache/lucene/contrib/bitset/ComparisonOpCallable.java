@@ -43,7 +43,7 @@ class ComparisonOpCallable<T> extends AbstractOpCallable<T[]> {
 
     Object[] result = new Object[toIndex - fromIndex];
     for (int i = fromIndex; i < toIndex; i++) {
-      result[i - fromIndex] = operation.compute(accumulator, bs[i], toCompareDisi);
+      result[i - fromIndex] = operation.compute(accumulator, bs[i], toCompareBs);
     }
 
     return ArrayUtils.typedArray(result);
