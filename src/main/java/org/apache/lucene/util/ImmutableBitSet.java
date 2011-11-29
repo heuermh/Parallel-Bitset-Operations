@@ -103,7 +103,72 @@ public final class ImmutableBitSet extends AbstractBitSet /*implements Serializa
     this.wlen = numWords;
     this.numBits = wlen * 64;
   }
-  
+
+
+    protected long[] bits() { return bits; }
+    protected long numBits() { return numBits; }
+    protected int wlen() { return wlen; }
+
+    public void set(long index) {
+        throw new UnsupportedOperationException();
+    }
+    public void fastSet(int index) {
+        throw new UnsupportedOperationException();
+    }
+    public void fastSet(long index) {
+        throw new UnsupportedOperationException();
+    }
+    public void set(long startIndex, long endIndex) {
+        throw new UnsupportedOperationException();
+    }
+    public void fastClear(int index) {
+        throw new UnsupportedOperationException();
+    }
+    public void fastClear(long index) {
+        throw new UnsupportedOperationException();
+    }
+    public void clear(long index) {
+        throw new UnsupportedOperationException();
+    }
+    public void clear(int startIndex, int endIndex) {
+        throw new UnsupportedOperationException();
+    }
+    public void clear(long startIndex, long endIndex) {
+        throw new UnsupportedOperationException();
+    }
+    public boolean getAndSet(int index) {
+        throw new UnsupportedOperationException();
+    }
+    public boolean getAndSet(long index) {
+        throw new UnsupportedOperationException();
+    }
+    public void fastFlip(int index) {
+        throw new UnsupportedOperationException();
+    }
+    public void fastFlip(long index) {
+        throw new UnsupportedOperationException();
+    }
+    public void flip(long index) {
+        throw new UnsupportedOperationException();
+    }
+    public boolean flipAndGet(int index) {
+        throw new UnsupportedOperationException();
+    }
+    public boolean flipAndGet(long index) {
+        throw new UnsupportedOperationException();
+    }
+    public void flip(long startIndex, long endIndex) {
+        throw new UnsupportedOperationException();
+    }
+    public void ensureCapacityWords(int numWords) {
+        throw new UnsupportedOperationException();
+    }
+    public void ensureCapacity(long numBits) {
+        throw new UnsupportedOperationException();
+    }
+    public void trimTrailingZeros() {
+        throw new UnsupportedOperationException();
+    }
 
   /** Returns the current capacity in bits (1 greater than the index of the last bit) */
   public long capacity() { return bits.length << 6; }
@@ -215,6 +280,14 @@ public final class ImmutableBitSet extends AbstractBitSet /*implements Serializa
   public long cardinality() {
     return BitUtil.pop_array(bits,0,wlen);
   }
+
+    public MutableBitSet mutableCopy() {
+        return new MutableBitSet(bits, wlen); // bits is cloned in ctr
+    }
+
+    public UnsafeBitSet unsafeCopy() {
+        return new UnsafeBitSet(bits.clone(), wlen);
+    }
 
  /** Returns the popcount or cardinality of the intersection of the two sets.
    * Neither set is modified.
@@ -372,10 +445,11 @@ public final class ImmutableBitSet extends AbstractBitSet /*implements Serializa
   }
 
   /** this = this AND other */
-  public ImmutableBitSet intersect(ImmutableBitSet other) {
-    int newLen= Math.min(this.wlen,other.wlen);
+  //public ImmutableBitSet intersect(ImmutableBitSet other) {
+  public AbstractBitSet intersect(AbstractBitSet other) {
+      int newLen= Math.min(this.wlen,other.wlen());
     long[] thisArr = this.bits.clone();
-    long[] otherArr = other.bits;
+    long[] otherArr = other.bits();
     // testing against zero can be more efficient
     int pos=newLen;
     while(--pos>=0) {
@@ -390,14 +464,15 @@ public final class ImmutableBitSet extends AbstractBitSet /*implements Serializa
   }
 
   /** this = this OR other */
-  public ImmutableBitSet union(ImmutableBitSet other) {
-    int newLen = Math.max(wlen,other.wlen);
+  //public ImmutableBitSet union(ImmutableBitSet other) {
+  public AbstractBitSet union(AbstractBitSet other) {
+      int newLen = Math.max(wlen,other.wlen());
     //ensureCapacityWords(newLen);
     //assert (numBits = Math.max(other.numBits, numBits)) >= 0;
 
     long[] thisArr = this.bits.clone();
-    long[] otherArr = other.bits;
-    int pos=Math.min(wlen,other.wlen);
+    long[] otherArr = other.bits();
+    int pos=Math.min(wlen,other.wlen());
     while(--pos>=0) {
       thisArr[pos] |= otherArr[pos];
     }
@@ -410,10 +485,11 @@ public final class ImmutableBitSet extends AbstractBitSet /*implements Serializa
 
 
   /** Remove all elements set in other. this = this AND_NOT other */
-  public ImmutableBitSet remove(ImmutableBitSet other) {
-    int idx = Math.min(wlen,other.wlen);
+  //public ImmutableBitSet remove(ImmutableBitSet other) {
+  public AbstractBitSet remove(AbstractBitSet other) {
+      int idx = Math.min(wlen,other.wlen());
     long[] thisArr = this.bits.clone();
-    long[] otherArr = other.bits;
+    long[] otherArr = other.bits();
     while(--idx>=0) {
       thisArr[idx] &= ~otherArr[idx];
     }
@@ -421,14 +497,15 @@ public final class ImmutableBitSet extends AbstractBitSet /*implements Serializa
   }
 
   /** this = this XOR other */
-  public ImmutableBitSet xor(ImmutableBitSet other) {
-    int newLen = Math.max(wlen,other.wlen);
+    //  public ImmutableBitSet xor(ImmutableBitSet other) {
+  public AbstractBitSet xor(AbstractBitSet other) {
+      int newLen = Math.max(wlen,other.wlen());
     //ensureCapacityWords(newLen);
     //assert (numBits = Math.max(other.numBits, numBits)) >= 0;
 
     long[] thisArr = this.bits.clone();
-    long[] otherArr = other.bits;
-    int pos=Math.min(wlen,other.wlen);
+    long[] otherArr = other.bits();
+    int pos=Math.min(wlen,other.wlen());
     while(--pos>=0) {
       thisArr[pos] ^= otherArr[pos];
     }
@@ -443,25 +520,29 @@ public final class ImmutableBitSet extends AbstractBitSet /*implements Serializa
   // some BitSet compatability methods
 
   //** see {@link intersect} */
-  public ImmutableBitSet and(ImmutableBitSet other) {
+  //public ImmutableBitSet and(ImmutableBitSet other) {
+  public AbstractBitSet and(AbstractBitSet other) {
     return intersect(other);
   }
 
   //** see {@link union} */
-  public ImmutableBitSet or(ImmutableBitSet other) {
+  //public ImmutableBitSet or(ImmutableBitSet other) {
+  public AbstractBitSet or(AbstractBitSet other) {
     return union(other);
   }
 
   //** see {@link andNot} */
-  public ImmutableBitSet andNot(ImmutableBitSet other) {
+  //public ImmutableBitSet andNot(ImmutableBitSet other) {
+  public AbstractBitSet andNot(AbstractBitSet other) {
     return remove(other);
   }
 
   /** returns true if the sets have any elements in common */
-  public boolean intersects(ImmutableBitSet other) {
-    int pos = Math.min(this.wlen, other.wlen);
+  //public boolean intersects(ImmutableBitSet other) {
+  public boolean intersects(AbstractBitSet other) {
+      int pos = Math.min(this.wlen, other.wlen());
     long[] thisArr = this.bits;
-    long[] otherArr = other.bits;
+    long[] otherArr = other.bits();
     while (--pos>=0) {
       if ((thisArr[pos] & otherArr[pos])!=0) return true;
     }
