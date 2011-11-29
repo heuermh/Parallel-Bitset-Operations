@@ -71,7 +71,7 @@ Test system: AMD Opteron, 64 bit linux, Sun Java 1.5_06 -server -Xbatch -Xmx64M
 </table>
  */
 
-public final class ImmutableBitSet implements Cloneable/*, Serializable */ {
+public final class ImmutableBitSet extends AbstractBitSet /*implements Serializable */ {
   private final long[] bits;
   private int wlen;   // number of words (elements) used in the array
 
@@ -203,17 +203,6 @@ public final class ImmutableBitSet implements Cloneable/*, Serializable */ {
     // we could right shift and check for parity bit, if it was available to us.
   }
   */
-
-  private int expandingWordNum(long index) {
-    int wordNum = (int)(index >> 6);
-    if (wordNum>=wlen) {
-      ensureCapacity(index+1);
-      wlen = wordNum+1;
-    }
-    assert (numBits = Math.max(numBits, index+1)) >= 0;
-    return wordNum;
-  }
-
 
   /** @return the number of set bits */
   public long cardinality() {
@@ -375,79 +364,72 @@ public final class ImmutableBitSet implements Cloneable/*, Serializable */ {
     return -1;
   }
 
-  @Override
-  public Object clone() {
-    try {
-      ImmutableBitSet obs = (ImmutableBitSet)super.clone();
-      obs.bits = obs.bits.clone();  // hopefully an array clone is as fast(er) than arraycopy
-      return obs;
-    } catch (CloneNotSupportedException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
   /** this = this AND other */
   public ImmutableBitSet intersect(ImmutableBitSet other) {
     int newLen= Math.min(this.wlen,other.wlen);
-    long[] thisArr = this.bits;
+    long[] thisArr = this.bits.clone();
     long[] otherArr = other.bits;
     // testing against zero can be more efficient
     int pos=newLen;
     while(--pos>=0) {
       thisArr[pos] &= otherArr[pos];
     }
-    if (this.wlen > newLen) {
+    //if (this.wlen > newLen) {
       // fill zeros from the new shorter length to the old length
-      Arrays.fill(bits,newLen,this.wlen,0);
-    }
+    //  Arrays.fill(bits,newLen,this.wlen,0);
+    //}
     this.wlen = newLen;
+    return new ImmutableBitSet(thisArr, newLen);
   }
 
   /** this = this OR other */
   public ImmutableBitSet union(ImmutableBitSet other) {
     int newLen = Math.max(wlen,other.wlen);
-    ensureCapacityWords(newLen);
-    assert (numBits = Math.max(other.numBits, numBits)) >= 0;
+    //ensureCapacityWords(newLen);
+    //assert (numBits = Math.max(other.numBits, numBits)) >= 0;
 
-    long[] thisArr = this.bits;
+    long[] thisArr = this.bits.clone();
     long[] otherArr = other.bits;
     int pos=Math.min(wlen,other.wlen);
     while(--pos>=0) {
       thisArr[pos] |= otherArr[pos];
     }
-    if (this.wlen < newLen) {
-      System.arraycopy(otherArr, this.wlen, thisArr, this.wlen, newLen-this.wlen);
-    }
-    this.wlen = newLen;
+    //if (this.wlen < newLen) {
+    //  System.arraycopy(otherArr, this.wlen, thisArr, this.wlen, newLen-this.wlen);
+    //}
+    //this.wlen = newLen;
+    return new ImmutableBitSet(thisArr, newLen);
   }
 
 
   /** Remove all elements set in other. this = this AND_NOT other */
   public ImmutableBitSet remove(ImmutableBitSet other) {
     int idx = Math.min(wlen,other.wlen);
-    long[] thisArr = this.bits;
+    long[] thisArr = this.bits.clone();
     long[] otherArr = other.bits;
     while(--idx>=0) {
       thisArr[idx] &= ~otherArr[idx];
     }
+    return new ImmutableBitSet(thisArr, wlen);
   }
 
   /** this = this XOR other */
   public ImmutableBitSet xor(ImmutableBitSet other) {
     int newLen = Math.max(wlen,other.wlen);
-    ensureCapacityWords(newLen);
-    assert (numBits = Math.max(other.numBits, numBits)) >= 0;
+    //ensureCapacityWords(newLen);
+    //assert (numBits = Math.max(other.numBits, numBits)) >= 0;
 
-    long[] thisArr = this.bits;
+    long[] thisArr = this.bits.clone();
     long[] otherArr = other.bits;
     int pos=Math.min(wlen,other.wlen);
     while(--pos>=0) {
       thisArr[pos] ^= otherArr[pos];
     }
-    if (this.wlen < newLen) {
-      System.arraycopy(otherArr, this.wlen, thisArr, this.wlen, newLen-this.wlen);
-    }
-    this.wlen = newLen;
+    //if (this.wlen < newLen) {
+    //  System.arraycopy(otherArr, this.wlen, thisArr, this.wlen, newLen-this.wlen);
+    //}
+    //this.wlen = newLen;
+    return new ImmutableBitSet(thisArr, newLen);
   }
 
 
@@ -477,32 +459,6 @@ public final class ImmutableBitSet implements Cloneable/*, Serializable */ {
       if ((thisArr[pos] & otherArr[pos])!=0) return true;
     }
     return false;
-  }
-
-
-  /** Expand the long[] with the size given as a number of words (64 bit longs).
-   * getNumWords() is unchanged by this call.
-   */
-  public void ensureCapacityWords(int numWords) {
-    if (bits.length < numWords) {
-      bits = grow(bits, numWords);
-    }
-  }
-
-  /** Ensure that the long[] is big enough to hold numBits, expanding it if necessary.
-   * getNumWords() is unchanged by this call.
-   */
-  public void ensureCapacity(long numBits) {
-    ensureCapacityWords(bits2words(numBits));
-  }
-
-  /** Lowers numWords, the number of words in use,
-   * by checking for trailing zero words.
-   */
-  public void trimTrailingZeros() {
-    int idx = wlen-1;
-    while (idx>=0 && bits[idx]==0) idx--;
-    wlen = idx+1;
   }
 
   /** returns the number of 64 bit words it would take to hold numBits */

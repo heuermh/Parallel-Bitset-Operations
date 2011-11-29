@@ -71,7 +71,7 @@ Test system: AMD Opteron, 64 bit linux, Sun Java 1.5_06 -server -Xbatch -Xmx64M
 </table>
  */
 
-public class OpenBitSet implements Cloneable/*, Serializable */ {
+public class OpenBitSet extends AbstractBitSet implements Cloneable/*, Serializable */ {
   protected long[] bits;
   protected int wlen;   // number of words (elements) used in the array
 
