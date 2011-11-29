@@ -78,6 +78,13 @@ public final class ImmutableBitSet extends AbstractBitSet /*implements Serializa
   // Used only for assert:
   private long numBits;
 
+    // does not clone bits, ick
+    private ImmutableBitSet(long[] bits, int numWords, boolean ignore) {
+        this.bits = bits;
+        this.wlen = numWords;
+        this.numBits = wlen * 64;        
+    }
+
   /** Constructs an OpenBitSet from an existing long[].
    * <br/>
    * The first 64 bits are in long[0],
@@ -379,7 +386,7 @@ public final class ImmutableBitSet extends AbstractBitSet /*implements Serializa
     //  Arrays.fill(bits,newLen,this.wlen,0);
     //}
     this.wlen = newLen;
-    return new ImmutableBitSet(thisArr, newLen);
+    return new ImmutableBitSet(thisArr, newLen, true);
   }
 
   /** this = this OR other */
@@ -398,7 +405,7 @@ public final class ImmutableBitSet extends AbstractBitSet /*implements Serializa
     //  System.arraycopy(otherArr, this.wlen, thisArr, this.wlen, newLen-this.wlen);
     //}
     //this.wlen = newLen;
-    return new ImmutableBitSet(thisArr, newLen);
+    return new ImmutableBitSet(thisArr, newLen, true);
   }
 
 
@@ -410,7 +417,7 @@ public final class ImmutableBitSet extends AbstractBitSet /*implements Serializa
     while(--idx>=0) {
       thisArr[idx] &= ~otherArr[idx];
     }
-    return new ImmutableBitSet(thisArr, wlen);
+    return new ImmutableBitSet(thisArr, wlen, true);
   }
 
   /** this = this XOR other */
@@ -429,7 +436,7 @@ public final class ImmutableBitSet extends AbstractBitSet /*implements Serializa
     //  System.arraycopy(otherArr, this.wlen, thisArr, this.wlen, newLen-this.wlen);
     //}
     //this.wlen = newLen;
-    return new ImmutableBitSet(thisArr, newLen);
+    return new ImmutableBitSet(thisArr, newLen, true);
   }
 
 
