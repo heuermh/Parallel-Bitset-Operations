@@ -71,7 +71,7 @@ Test system: AMD Opteron, 64 bit linux, Sun Java 1.5_06 -server -Xbatch -Xmx64M
 </table>
  */
 
-public class OpenBitSet implements /*Bits,*/ Cloneable/*, Serializable */ {
+public class OpenBitSet implements Cloneable/*, Serializable */ {
   protected long[] bits;
   protected int wlen;   // number of words (elements) used in the array
 
@@ -111,12 +111,6 @@ public class OpenBitSet implements /*Bits,*/ Cloneable/*, Serializable */ {
     this.numBits = wlen * 64;
   }
   
-    /*
-  @Override
-  public Bits bits() {
-    return this;
-  }
-    */
 
   /** Returns the current capacity in bits (1 greater than the index of the last bit) */
   public long capacity() { return bits.length << 6; }
