@@ -19,9 +19,8 @@
 
 package org.apache.lucene.contrib.bitset.ops;
 
-import org.apache.lucene.util.OpenBitSet;
-
-import java.io.IOException;
+import org.apache.lucene.util.ImmutableBitSet;
+import org.apache.lucene.util.MutableBitSet;
 
 /**
  * An operation that could easily be split in parts, producing partial results to accumulate at the end
@@ -33,9 +32,6 @@ public interface AssociativeOp {
    *
    * @param accumulator the bitset where to accumulate results
    * @param bitset      the bitset from where to get the bits
-   * @throws IOException if an error occurs when getting the bits
    */
-  void compute(OpenBitSet accumulator, OpenBitSet bitset) throws IOException;
-
-  OpenBitSet newAccumulator(int bitsetSize, OpenBitSet b) throws IOException;
+  void compute(MutableBitSet accumulator, ImmutableBitSet bitset);
 }

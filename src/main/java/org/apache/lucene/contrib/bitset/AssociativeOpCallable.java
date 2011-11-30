@@ -20,24 +20,24 @@
 package org.apache.lucene.contrib.bitset;
 
 import org.apache.lucene.contrib.bitset.ops.AssociativeOp;
-import org.apache.lucene.util.OpenBitSet;
+import org.apache.lucene.util.ImmutableBitSet;
+import org.apache.lucene.util.MutableBitSet;
 
-class AssociativeOpCallable extends AbstractOpCallable<OpenBitSet> {
+class AssociativeOpCallable extends AbstractOpCallable<MutableBitSet> {
 
-  private final AssociativeOp operation;
+    private final AssociativeOp operation;
 
-  public AssociativeOpCallable(OpenBitSet bs, int fromIndex, int toIndex, int finalBitsetSize, AssociativeOp operation) {
-    super(bs, fromIndex, toIndex, finalBitsetSize);
-    this.operation = operation;
-  }
-
-  @Override
-  public OpenBitSet call() throws Exception {
-    OpenBitSet accumulator = operation.newAccumulator(finalBitsetSize, bs.fastGet(fromIndex));
-    for (int i = fromIndex + 1; i < toIndex; i++) {
-      operation.compute(accumulator, bs[i]);
+    public AssociativeOpCallable(final ImmutableBitSet[] bs, final int fromIndex, final int toIndex, final int finalBitsetSize, final AssociativeOp operation) {
+        super(bs, fromIndex, toIndex, finalBitsetSize);
+        this.operation = operation;
     }
-    return accumulator;
-  }
 
+    @Override
+    public MutableBitSet call() throws Exception {
+        MutableBitSet accumulator = new MutableBitSet(finalBitsetSize);
+        for (int i = fromIndex + 1; i < toIndex; i++) {
+            operation.compute(accumulator, bs[i]);
+        }
+        return accumulator;
+    }
 }

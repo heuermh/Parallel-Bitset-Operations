@@ -19,14 +19,13 @@
 
 package org.apache.lucene.contrib.bitset.ops;
 
-import org.apache.lucene.util.OpenBitSet;
+import org.apache.lucene.util.ImmutableBitSet;
+import org.apache.lucene.util.MutableBitSet;
 
-import java.io.IOException;
+public final class IntersectionCount implements ComparisonOp<Long> {
 
-public class IntersectionCount implements ComparisonOp<Long> {
-
-  @Override
-  public Long compute(OpenBitSet accumulator, OpenBitSet target, OpenBitSet toCompare) throws IOException {
-    return OpenBitSet.intersectionCount((OpenBitSet) target, toCompare);
-  }
+    @Override
+    public Long compute(final MutableBitSet accumulator, final ImmutableBitSet target, final ImmutableBitSet toCompare) {
+        return Long.valueOf(MutableBitSet.intersectionCount(target, toCompare));
+    }
 }

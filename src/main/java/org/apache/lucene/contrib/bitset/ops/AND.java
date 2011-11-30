@@ -19,20 +19,13 @@
 
 package org.apache.lucene.contrib.bitset.ops;
 
-import org.apache.lucene.util.OpenBitSet;
+import org.apache.lucene.util.ImmutableBitSet;
+import org.apache.lucene.util.MutableBitSet;
 
-import java.io.IOException;
+public final class AND implements AssociativeOp {
 
-public class AND implements AssociativeOp {
-
-  @Override
-  public void compute(OpenBitSet accumulator, OpenBitSet bitset) throws IOException {
-    accumulator.and(bitset);
-  }
-
-  @Override
-  public OpenBitSet newAccumulator(int bitsetSize, OpenBitSet b) throws IOException {
-    return new OpenBitSet(b.iterator(), bitsetSize);
-  }
-
+    @Override
+    public void compute(final MutableBitSet accumulator, final ImmutableBitSet bitset) {
+        accumulator.and(bitset);
+    }
 }

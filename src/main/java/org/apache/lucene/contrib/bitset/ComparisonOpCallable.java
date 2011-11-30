@@ -20,32 +20,27 @@
 package org.apache.lucene.contrib.bitset;
 
 import org.apache.lucene.contrib.bitset.ops.ComparisonOp;
-import org.apache.lucene.util.OpenBitSet;
+import org.apache.lucene.util.ImmutableBitSet;
+import org.apache.lucene.util.MutableBitSet;
 
 class ComparisonOpCallable<T> extends AbstractOpCallable<T[]> {
 
-  private final OpenBitSet toCompare;
-  private final ComparisonOp<T> operation;
+    private final ImmutableBitSet toCompare;
+    private final ComparisonOp<T> operation;
 
-  public ComparisonOpCallable(OpenBitSet bs, int fromIndex, int toIndex, int finalBitsetSize, OpenBitSet toCompare, ComparisonOp<T> operation) {
-    super(bs, fromIndex, toIndex, finalBitsetSize);
-    this.toCompare = toCompare;
-    this.operation = operation;
-  }
-
-  @SuppressWarnings({"unchecked"})
-  @Override
-  public T[] call() throws Exception {
-    OpenBitSet accumulator = new OpenBitSet(finalBitsetSize);
-
-    OpenBitSet toCompareBs = new OpenBitSet(finalBitsetSize);
-    toCompareBs.inPlaceOr(toCompare.iterator());
-
-    Object[] result = new Object[toIndex - fromIndex];
-    for (int i = fromIndex; i < toIndex; i++) {
-      result[i - fromIndex] = operation.compute(accumulator, bs[i], toCompareBs);
+    public ComparisonOpCallable(final ImmutableBitSet[] bs, final int fromIndex, final int toIndex, final int finalBitsetSize, final ImmutableBitSet toCompare, final ComparisonOp<T> operation) {
+        super(bs, fromIndex, toIndex, finalBitsetSize);
+        this.toCompare = toCompare;
+        this.operation = operation;
     }
 
-    return ArrayUtils.typedArray(result);
-  }
+    @Override
+    public T[] call() throws Exception {
+        MutableBitSet accumulator = new MutableBitSet(finalBitsetSize);
+        T[] result = new T[toIndex - fromIndex];
+        for (int i = fromIndex; i < toIndex; i++) {
+            result[i - fromIndex] = operation.compute(accumulator, bs[i], toCompare);
+        }
+        return result;
+    }
 }

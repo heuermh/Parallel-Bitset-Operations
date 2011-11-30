@@ -21,23 +21,22 @@ package org.apache.lucene.contrib.bitset;
 
 import java.util.concurrent.Callable;
 
-import org.apache.lucene.util.OpenBitSet;
+import org.apache.lucene.util.ImmutableBitSet;
 
 abstract class AbstractOpCallable<T> implements Callable<T> {
 
-  protected final OpenBitSet bs;
+  protected final ImmutableBitSet[] bs;
   protected final int finalBitsetSize;
   protected final int fromIndex;
   protected final int toIndex;
 
-  public AbstractOpCallable(OpenBitSet bs, int fromIndex, int toIndex, int finalBitsetSize) {
+  public AbstractOpCallable(final ImmutableBitSet[] bs, final int fromIndex, final int toIndex, final int finalBitsetSize) {
+    if (bs == null || bs.length == 0) {
+      throw new IllegalArgumentException("bit sets cannot be null or empty");
+    }
     this.bs = bs;
     this.fromIndex = fromIndex;
     this.toIndex = toIndex;
     this.finalBitsetSize = finalBitsetSize;
-
-    if (bs.capacity() == 0) {
-      throw new IllegalArgumentException("OpenBitSet cannot be empty");
-    }
   }
 }

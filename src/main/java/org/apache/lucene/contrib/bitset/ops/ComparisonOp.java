@@ -19,9 +19,8 @@
 
 package org.apache.lucene.contrib.bitset.ops;
 
-import org.apache.lucene.util.OpenBitSet;
-
-import java.io.IOException;
+import org.apache.lucene.util.ImmutableBitSet;
+import org.apache.lucene.util.MutableBitSet;
 
 /**
  * An operation that compares the given bitset with the content of an accumulator. The target bitset loads the accumulator that is compared with the toCompare bitset
@@ -37,8 +36,6 @@ public interface ComparisonOp<T> {
    * @param target      the Nth bitset to compare
    * @param toCompare   the bitset used as comparison
    * @return the result of the comparison (for example, a number for {@link IntersectionCount})
-   * @throws IOException
    */
-  T compute(OpenBitSet accumulator, OpenBitSet target, OpenBitSet toCompare) throws IOException;
-
+  T compute(MutableBitSet accumulator, ImmutableBitSet target, ImmutableBitSet toCompare);
 }
