@@ -38,6 +38,7 @@ public abstract class AbstractBitSet {
     public abstract long nextSetBit(long index);
     public abstract int prevSetBit(int index);
     public abstract long prevSetBit(long index);
+    public abstract boolean intersects(AbstractBitSet other);
 
     // optional
     public abstract void set(long index);
@@ -61,7 +62,7 @@ public abstract class AbstractBitSet {
     public abstract void ensureCapacity(long numBits);
     public abstract void trimTrailingZeros();
 
-    public abstract boolean intersects(AbstractBitSet other);
+    // may return this or a copy of this
     public abstract AbstractBitSet intersect(AbstractBitSet other);
     public abstract AbstractBitSet union(AbstractBitSet other);
     public abstract AbstractBitSet remove(AbstractBitSet other);

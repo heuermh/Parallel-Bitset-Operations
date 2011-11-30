@@ -17,582 +17,569 @@
 
 package org.apache.lucene.util;
 
-import java.util.Arrays;
-
-/** An "open" BitSet implementation that allows direct access to the array of words
- * storing the bits.
- * <p/>
- * Unlike java.util.bitset, the fact that bits are packed into an array of longs
- * is part of the interface.  This allows efficient implementation of other algorithms
- * by someone other than the author.  It also allows one to efficiently implement
- * alternate serialization or interchange formats.
- * <p/>
- * <code>OpenBitSet</code> is faster than <code>java.util.BitSet</code> in most operations
- * and *much* faster at calculating cardinality of sets and results of set operations.
- * It can also handle sets of larger cardinality (up to 64 * 2**32-1)
- * <p/>
- * The goals of <code>OpenBitSet</code> are the fastest implementation possible, and
- * maximum code reuse.  Extra safety and encapsulation
- * may always be built on top, but if that's built in, the cost can never be removed (and
- * hence people re-implement their own version in order to get better performance).
- * If you want a "safe", totally encapsulated (and slower and limited) BitSet
- * class, use <code>java.util.BitSet</code>.
- * <p/>
- * <h3>Performance Results</h3>
- *
- Test system: Pentium 4, Sun Java 1.5_06 -server -Xbatch -Xmx64M
-<br/>BitSet size = 1,000,000
-<br/>Results are java.util.BitSet time divided by OpenBitSet time.
-<table border="1">
- <tr>
-  <th></th> <th>cardinality</th> <th>intersect_count</th> <th>union</th> <th>nextSetBit</th> <th>get</th> <th>iterator</th>
- </tr>
- <tr>
-  <th>50% full</th> <td>3.36</td> <td>3.96</td> <td>1.44</td> <td>1.46</td> <td>1.99</td> <td>1.58</td>
- </tr>
- <tr>
-   <th>1% full</th> <td>3.31</td> <td>3.90</td> <td>&nbsp;</td> <td>1.04</td> <td>&nbsp;</td> <td>0.99</td>
- </tr>
-</table>
-<br/>
-Test system: AMD Opteron, 64 bit linux, Sun Java 1.5_06 -server -Xbatch -Xmx64M
-<br/>BitSet size = 1,000,000
-<br/>Results are java.util.BitSet time divided by OpenBitSet time.
-<table border="1">
- <tr>
-  <th></th> <th>cardinality</th> <th>intersect_count</th> <th>union</th> <th>nextSetBit</th> <th>get</th> <th>iterator</th>
- </tr>
- <tr>
-  <th>50% full</th> <td>2.50</td> <td>3.50</td> <td>1.00</td> <td>1.03</td> <td>1.12</td> <td>1.25</td>
- </tr>
- <tr>
-   <th>1% full</th> <td>2.51</td> <td>3.49</td> <td>&nbsp;</td> <td>1.00</td> <td>&nbsp;</td> <td>1.02</td>
- </tr>
-</table>
+/**
+ * Immutable bit set.
  */
+public final class ImmutableBitSet extends AbstractBitSet /* implements Serializable */{
+    private final long[] bits;
+    private final long numBits;
+    private final int wlen;
 
-public final class ImmutableBitSet extends AbstractBitSet /*implements Serializable */ {
-  private final long[] bits;
-  private int wlen;   // number of words (elements) used in the array
 
-  // Used only for assert:
-  private long numBits;
+    /**
+     * Create a new immutable bit set with bits copied from the specified <code>long[]</code>.
+     *
+     * @param bits bits to copy, stored in <code>long[]</code>
+     * @param wlen number of words/elements used in <code>bits</code>
+     */
+    public ImmutableBitSet(final long[] bits, final int wlen) {
+        this(bits.clone(), wlen * 64, wlen);
+    }
 
-    // does not clone bits, ick
-    private ImmutableBitSet(long[] bits, int numWords, boolean ignore) {
+    /**
+     * Create a new immutable bit set from the specified <code>long[]</code>.
+     *
+     * @param bits bits stored in <code>long[]</code>
+     * @param numBits number of bits
+     * @param wlen number of words/elements used in <code>bits</code>
+     */
+    private ImmutableBitSet(final long[] bits, final long numBits, final int wlen) {
         this.bits = bits;
-        this.wlen = numWords;
-        this.numBits = wlen * 64;        
+        this.wlen = wlen;
+        this.numBits = numBits;
     }
 
-  /** Constructs an OpenBitSet from an existing long[].
-   * <br/>
-   * The first 64 bits are in long[0],
-   * with bit index 0 at the least significant bit, and bit index 63 at the most significant.
-   * Given a bit index,
-   * the word containing it is long[index/64], and it is at bit number index%64 within that word.
-   * <p>
-   * numWords are the number of elements in the array that contain
-   * set bits (non-zero longs).
-   * numWords should be &lt= bits.length, and
-   * any existing words in the array at position &gt= numWords should be zero.
-   *
-   */
-  public ImmutableBitSet(long[] bits, int numWords) {
-    this.bits = bits.clone();
-    this.wlen = numWords;
-    this.numBits = wlen * 64;
-  }
 
+    @Override
+    public AbstractBitSet and(final AbstractBitSet other) {
+        return intersect(other);
+    }
 
-    protected long[] bits() { return bits; }
-    protected long numBits() { return numBits; }
-    protected int wlen() { return wlen; }
+    @Override
+    public AbstractBitSet andNot(final AbstractBitSet other) {
+        return remove(other);
+    }
 
-    public void set(long index) {
-        throw new UnsupportedOperationException();
+    @Override
+    public long capacity() {
+        return bits.length << 6;
     }
-    public void fastSet(int index) {
-        throw new UnsupportedOperationException();
+
+    @Override
+    public long cardinality() {
+        return BitUtil.pop_array(bits, 0, wlen);
     }
-    public void fastSet(long index) {
-        throw new UnsupportedOperationException();
-    }
-    public void set(long startIndex, long endIndex) {
-        throw new UnsupportedOperationException();
-    }
-    public void fastClear(int index) {
-        throw new UnsupportedOperationException();
-    }
-    public void fastClear(long index) {
-        throw new UnsupportedOperationException();
-    }
-    public void clear(long index) {
-        throw new UnsupportedOperationException();
-    }
-    public void clear(int startIndex, int endIndex) {
-        throw new UnsupportedOperationException();
-    }
-    public void clear(long startIndex, long endIndex) {
-        throw new UnsupportedOperationException();
-    }
-    public boolean getAndSet(int index) {
-        throw new UnsupportedOperationException();
-    }
-    public boolean getAndSet(long index) {
-        throw new UnsupportedOperationException();
-    }
-    public void fastFlip(int index) {
-        throw new UnsupportedOperationException();
-    }
-    public void fastFlip(long index) {
-        throw new UnsupportedOperationException();
-    }
-    public void flip(long index) {
-        throw new UnsupportedOperationException();
-    }
-    public boolean flipAndGet(int index) {
-        throw new UnsupportedOperationException();
-    }
-    public boolean flipAndGet(long index) {
-        throw new UnsupportedOperationException();
-    }
-    public void flip(long startIndex, long endIndex) {
-        throw new UnsupportedOperationException();
-    }
-    public void ensureCapacityWords(int numWords) {
-        throw new UnsupportedOperationException();
-    }
-    public void ensureCapacity(long numBits) {
-        throw new UnsupportedOperationException();
-    }
-    public void trimTrailingZeros() {
+
+    @Override
+    public void clear(final int startIndex, final int endIndex) {
         throw new UnsupportedOperationException();
     }
 
-  /** Returns the current capacity in bits (1 greater than the index of the last bit) */
-  public long capacity() { return bits.length << 6; }
+    @Override
+    public void clear(final long index) {
+        throw new UnsupportedOperationException();
+    }
 
- /**
-  * Returns the current capacity of this set.  Included for
-  * compatibility.  This is *not* equal to {@link #cardinality}
-  */
-  public long size() {
-    return capacity();
-  }
+    @Override
+    public void clear(final long startIndex, final long endIndex) {
+        throw new UnsupportedOperationException();
+    }
 
-  public int length() {
-    return bits.length << 6;
-  }
+    @Override
+    public void ensureCapacity(final long numBits) {
+        throw new UnsupportedOperationException();
+    }
 
-  /** Returns true if there are no set bits */
-  public boolean isEmpty() { return cardinality()==0; }
+    @Override
+    public void ensureCapacityWords(final int numWords) {
+        throw new UnsupportedOperationException();
+    }
 
-  /** Expert: gets the number of longs in the array that are in use */
-  public int getNumWords() { return wlen; }
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ImmutableBitSet)) {
+            return false;
+        }
+        ImmutableBitSet a;
+        ImmutableBitSet b = (ImmutableBitSet) o;
+        // make a the larger set.
+        if (b.wlen > this.wlen) {
+            a = b;
+            b = this;
+        }
+        else {
+            a = this;
+        }
 
-  /** Expert: sets the number of longs in the array that are in use */
-  public void setNumWords(int nWords) { this.wlen=nWords; }
+        // check for any set bits out of the range of b
+        for (int i = a.wlen - 1; i >= b.wlen; i--) {
+            if (a.bits[i] != 0) {
+                return false;
+            }
+        }
 
-  /** Returns true or false for the specified bit index. */
-  public boolean get(int index) {
-    int i = index >> 6;               // div 64
-    // signed shift will keep a negative index and force an
-    // array-index-out-of-bounds-exception, removing the need for an explicit check.
-    if (i>=bits.length) return false;
+        for (int i = b.wlen - 1; i >= 0; i--) {
+            if (a.bits[i] != b.bits[i]) {
+                return false;
+            }
+        }
 
-    int bit = index & 0x3f;           // mod 64
-    long bitmask = 1L << bit;
-    return (bits[i] & bitmask) != 0;
-  }
+        return true;
+    }
 
+    @Override
+    public void fastClear(final int index) {
+        throw new UnsupportedOperationException();
+    }
 
- /** Returns true or false for the specified bit index.
-   * The index should be less than the OpenBitSet size
-   */
-  public boolean fastGet(int index) {
-    assert index >= 0 && index < numBits;
-    int i = index >> 6;               // div 64
-    // signed shift will keep a negative index and force an
-    // array-index-out-of-bounds-exception, removing the need for an explicit check.
-    int bit = index & 0x3f;           // mod 64
-    long bitmask = 1L << bit;
-    return (bits[i] & bitmask) != 0;
-  }
+    @Override
+    public void fastClear(final long index) {
+        throw new UnsupportedOperationException();
+    }
 
+    @Override
+    public void fastFlip(final int index) {
+        throw new UnsupportedOperationException();
+    }
 
+    @Override
+    public void fastFlip(final long index) {
+        throw new UnsupportedOperationException();
+    }
 
- /** Returns true or false for the specified bit index
-  */
-  public boolean get(long index) {
-    int i = (int)(index >> 6);             // div 64
-    if (i>=bits.length) return false;
-    int bit = (int)index & 0x3f;           // mod 64
-    long bitmask = 1L << bit;
-    return (bits[i] & bitmask) != 0;
-  }
+    @Override
+    public boolean fastGet(final int index) {
+        assert index >= 0 && index < numBits;
+        int i = index >> 6; // div 64
+        // signed shift will keep a negative index and force an
+        // array-index-out-of-bounds-exception, removing the need for an
+        // explicit check.
+        int bit = index & 0x3f; // mod 64
+        long bitmask = 1L << bit;
+        return (bits[i] & bitmask) != 0;
+    }
 
-  /** Returns true or false for the specified bit index.
-   * The index should be less than the OpenBitSet size.
-   */
-  public boolean fastGet(long index) {
-    assert index >= 0 && index < numBits;
-    int i = (int)(index >> 6);               // div 64
-    int bit = (int)index & 0x3f;           // mod 64
-    long bitmask = 1L << bit;
-    return (bits[i] & bitmask) != 0;
-  }
+    @Override
+    public boolean fastGet(final long index) {
+        assert index >= 0 && index < numBits;
+        int i = (int) (index >> 6); // div 64
+        int bit = (int) index & 0x3f; // mod 64
+        long bitmask = 1L << bit;
+        return (bits[i] & bitmask) != 0;
+    }
 
-  /*
-  // alternate implementation of get()
-  public boolean get1(int index) {
-    int i = index >> 6;                // div 64
-    int bit = index & 0x3f;            // mod 64
-    return ((bits[i]>>>bit) & 0x01) != 0;
-    // this does a long shift and a bittest (on x86) vs
-    // a long shift, and a long AND, (the test for zero is prob a no-op)
-    // testing on a P4 indicates this is slower than (bits[i] & bitmask) != 0;
-  }
-  */
+    @Override
+    public void fastSet(final int index) {
+        throw new UnsupportedOperationException();
+    }
 
+    @Override
+    public void fastSet(final long index) {
+        throw new UnsupportedOperationException();
+    }
 
-  /** returns 1 if the bit is set, 0 if not.
-   * The index should be less than the OpenBitSet size
-   */
-  public int getBit(int index) {
-    assert index >= 0 && index < numBits;
-    int i = index >> 6;                // div 64
-    int bit = index & 0x3f;            // mod 64
-    return ((int)(bits[i]>>>bit)) & 0x01;
-  }
+    @Override
+    public void flip(final long index) {
+        throw new UnsupportedOperationException();
+    }
 
+    @Override
+    public void flip(final long startIndex, final long endIndex) {
+        throw new UnsupportedOperationException();
+    }
 
-  /*
-  public boolean get2(int index) {
-    int word = index >> 6;            // div 64
-    int bit = index & 0x0000003f;     // mod 64
-    return (bits[word] << bit) < 0;   // hmmm, this would work if bit order were reversed
-    // we could right shift and check for parity bit, if it was available to us.
-  }
-  */
+    @Override
+    public boolean flipAndGet(final int index) {
+        throw new UnsupportedOperationException();
+    }
 
-  /** @return the number of set bits */
-  public long cardinality() {
-    return BitUtil.pop_array(bits,0,wlen);
-  }
+    @Override
+    public boolean flipAndGet(final long index) {
+        throw new UnsupportedOperationException();
+    }
 
+    @Override
+    public boolean get(final int index) {
+        int i = index >> 6; // div 64
+        // signed shift will keep a negative index and force an
+        // array-index-out-of-bounds-exception, removing the need for an
+        // explicit check.
+        if (i >= bits.length) {
+            return false;
+        }
+
+        int bit = index & 0x3f; // mod 64
+        long bitmask = 1L << bit;
+        return (bits[i] & bitmask) != 0;
+    }
+
+    @Override
+    public boolean get(final long index) {
+        int i = (int) (index >> 6); // div 64
+        if (i >= bits.length) {
+            return false;
+        }
+        int bit = (int) index & 0x3f; // mod 64
+        long bitmask = 1L << bit;
+        return (bits[i] & bitmask) != 0;
+    }
+
+    @Override
+    public boolean getAndSet(final int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean getAndSet(final long index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getBit(final int index) {
+        assert index >= 0 && index < numBits;
+        int i = index >> 6; // div 64
+        int bit = index & 0x3f; // mod 64
+        return ((int) (bits[i] >>> bit)) & 0x01;
+    }
+
+    @Override
+    public int hashCode() {
+        // Start with a zero hash and use a mix that results in zero if the input is zero.
+        // This effectively truncates trailing zeros without an explicit check.
+        long h = 0;
+        for (int i = bits.length; --i >= 0;) {
+            h ^= bits[i];
+            h = (h << 1) | (h >>> 63); // rotate left
+        }
+        // fold leftmost bits into right and add a constant to prevent
+        // empty sets from returning 0, which is too common.
+        return (int) ((h >> 32) ^ h) + 0x98761234;
+    }
+
+    @Override
+    public AbstractBitSet intersect(final AbstractBitSet other) {
+        int newLen = Math.min(this.wlen, other.wlen());
+        long[] thisArr = this.bits.clone();
+        long[] otherArr = other.bits();
+        // testing against zero can be more efficient
+        int pos = newLen;
+        while (--pos >= 0) {
+            thisArr[pos] &= otherArr[pos];
+        }
+        // if (this.wlen > newLen) {
+        // fill zeros from the new shorter length to the old length
+        // Arrays.fill(bits,newLen,this.wlen,0);
+        // }
+        //this.wlen = newLen;
+        return new ImmutableBitSet(thisArr, newLen * 64, newLen);
+    }
+
+    @Override
+    public boolean intersects(final AbstractBitSet other) {
+        int pos = Math.min(this.wlen, other.wlen());
+        long[] thisArr = this.bits;
+        long[] otherArr = other.bits();
+        while (--pos >= 0) {
+            if ((thisArr[pos] & otherArr[pos]) != 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return cardinality() == 0;
+    }
+
+    @Override
+    public int length() {
+        return bits.length << 6;
+    }
+
+    /**
+     * Return a new mutable copy of this immutable bit set.
+     *
+     * @return a new mutable copy of this immutable bit set
+     */
     public MutableBitSet mutableCopy() {
         return new MutableBitSet(bits, wlen); // bits is cloned in ctr
     }
 
+    @Override
+    public int nextSetBit(final int index) {
+        int i = index >> 6;
+        if (i >= wlen) {
+            return -1;
+        }
+        int subIndex = index & 0x3f; // index within the word
+        long word = bits[i] >> subIndex; // skip all the bits to the right of index
+
+        if (word != 0) {
+            return (i << 6) + subIndex + BitUtil.ntz(word);
+        }
+
+        while (++i < wlen) {
+            word = bits[i];
+            if (word != 0) {
+                return (i << 6) + BitUtil.ntz(word);
+            }
+        }
+        return -1;
+    }
+
+    @Override
+    public long nextSetBit(final long index) {
+        int i = (int) (index >>> 6);
+        if (i >= wlen) {
+            return -1;
+        }
+        int subIndex = (int) index & 0x3f; // index within the word
+        long word = bits[i] >>> subIndex; // skip all the bits to the right of index
+
+        if (word != 0) {
+            return (((long) i) << 6) + (subIndex + BitUtil.ntz(word));
+        }
+
+        while (++i < wlen) {
+            word = bits[i];
+            if (word != 0) {
+                return (((long) i) << 6) + BitUtil.ntz(word);
+            }
+        }
+        return -1;
+    }
+
+    @Override
+    public AbstractBitSet or(final AbstractBitSet other) {
+        return union(other);
+    }
+
+    @Override
+    public int prevSetBit(final int index) {
+        int i = index >> 6;
+        final int subIndex;
+        long word;
+        if (i >= wlen) {
+            i = wlen - 1;
+            if (i < 0) {
+                return -1;
+            }
+            subIndex = 63; // last possible bit
+            word = bits[i];
+        }
+        else {
+            if (i < 0) {
+                return -1;
+            }
+            subIndex = index & 0x3f; // index within the word
+            word = (bits[i] << (63 - subIndex)); // skip all the bits to the left of index
+        }
+
+        if (word != 0) {
+            return (i << 6) + subIndex - Long.numberOfLeadingZeros(word); // See LUCENE-3197
+        }
+
+        while (--i >= 0) {
+            word = bits[i];
+            if (word != 0) {
+                return (i << 6) + 63 - Long.numberOfLeadingZeros(word);
+            }
+        }
+        return -1;
+    }
+
+    @Override
+    public long prevSetBit(final long index) {
+        int i = (int) (index >> 6);
+        final int subIndex;
+        long word;
+        if (i >= wlen) {
+            i = wlen - 1;
+            if (i < 0) {
+                return -1;
+            }
+            subIndex = 63; // last possible bit
+            word = bits[i];
+        }
+        else {
+            if (i < 0) {
+                return -1;
+            }
+            subIndex = (int) index & 0x3f; // index within the word
+            word = (bits[i] << (63 - subIndex)); // skip all the bits to the left of index
+        }
+
+        if (word != 0) {
+            return (((long) i) << 6) + subIndex - Long.numberOfLeadingZeros(word); // See LUCENE-3197
+        }
+
+        while (--i >= 0) {
+            word = bits[i];
+            if (word != 0) {
+                return (((long) i) << 6) + 63 - Long.numberOfLeadingZeros(word);
+            }
+        }
+        return -1;
+    }
+
+    @Override
+    public AbstractBitSet remove(final AbstractBitSet other) {
+        int idx = Math.min(wlen, other.wlen());
+        long[] thisArr = this.bits.clone();
+        long[] otherArr = other.bits();
+        while (--idx >= 0) {
+            thisArr[idx] &= ~otherArr[idx];
+        }
+        return new ImmutableBitSet(thisArr, wlen * 64, wlen);
+    }
+
+    @Override
+    public void set(final long index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void set(final long startIndex, final long endIndex) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public long size() {
+        return capacity();
+    }
+
+    @Override
+    public void trimTrailingZeros() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public AbstractBitSet union(final AbstractBitSet other) {
+        int newLen = Math.max(wlen, other.wlen());
+        // ensureCapacityWords(newLen);
+        // assert (numBits = Math.max(other.numBits, numBits)) >= 0;
+
+        long[] thisArr = this.bits.clone();
+        long[] otherArr = other.bits();
+        int pos = Math.min(wlen, other.wlen());
+        while (--pos >= 0) {
+            thisArr[pos] |= otherArr[pos];
+        }
+        // if (this.wlen < newLen) {
+        // System.arraycopy(otherArr, this.wlen, thisArr, this.wlen,
+        // newLen-this.wlen);
+        // }
+        // this.wlen = newLen;
+        return new ImmutableBitSet(thisArr, newLen * 64, newLen);
+    }
+
+    /**
+     * Return a new unsafe copy of this immutable bit set.
+     *
+     * @return a new unsafe copy of this immutable bit set
+     */
     public UnsafeBitSet unsafeCopy() {
         return new UnsafeBitSet(bits.clone(), wlen);
     }
 
- /** Returns the popcount or cardinality of the intersection of the two sets.
-   * Neither set is modified.
-   */
-  public static long intersectionCount(ImmutableBitSet a, ImmutableBitSet b) {
-    return BitUtil.pop_intersect(a.bits, b.bits, 0, Math.min(a.wlen, b.wlen));
- }
+    @Override
+    public AbstractBitSet xor(final AbstractBitSet other) {
+        int newLen = Math.max(wlen, other.wlen());
+        // ensureCapacityWords(newLen);
+        // assert (numBits = Math.max(other.numBits, numBits)) >= 0;
 
-  /** Returns the popcount or cardinality of the union of the two sets.
-    * Neither set is modified.
-    */
-  public static long unionCount(ImmutableBitSet a, ImmutableBitSet b) {
-    long tot = BitUtil.pop_union(a.bits, b.bits, 0, Math.min(a.wlen, b.wlen));
-    if (a.wlen < b.wlen) {
-      tot += BitUtil.pop_array(b.bits, a.wlen, b.wlen-a.wlen);
-    } else if (a.wlen > b.wlen) {
-      tot += BitUtil.pop_array(a.bits, b.wlen, a.wlen-b.wlen);
-    }
-    return tot;
-  }
-
-  /** Returns the popcount or cardinality of "a and not b"
-   * or "intersection(a, not(b))".
-   * Neither set is modified.
-   */
-  public static long andNotCount(ImmutableBitSet a, ImmutableBitSet b) {
-    long tot = BitUtil.pop_andnot(a.bits, b.bits, 0, Math.min(a.wlen, b.wlen));
-    if (a.wlen > b.wlen) {
-      tot += BitUtil.pop_array(a.bits, b.wlen, a.wlen-b.wlen);
-    }
-    return tot;
-  }
-
- /** Returns the popcount or cardinality of the exclusive-or of the two sets.
-  * Neither set is modified.
-  */
-  public static long xorCount(ImmutableBitSet a, ImmutableBitSet b) {
-    long tot = BitUtil.pop_xor(a.bits, b.bits, 0, Math.min(a.wlen, b.wlen));
-    if (a.wlen < b.wlen) {
-      tot += BitUtil.pop_array(b.bits, a.wlen, b.wlen-a.wlen);
-    } else if (a.wlen > b.wlen) {
-      tot += BitUtil.pop_array(a.bits, b.wlen, a.wlen-b.wlen);
-    }
-    return tot;
-  }
-
-
-  /** Returns the index of the first set bit starting at the index specified.
-   *  -1 is returned if there are no more set bits.
-   */
-  public int nextSetBit(int index) {
-    int i = index>>6;
-    if (i>=wlen) return -1;
-    int subIndex = index & 0x3f;      // index within the word
-    long word = bits[i] >> subIndex;  // skip all the bits to the right of index
-
-    if (word!=0) {
-      return (i<<6) + subIndex + BitUtil.ntz(word);
+        long[] thisArr = this.bits.clone();
+        long[] otherArr = other.bits();
+        int pos = Math.min(wlen, other.wlen());
+        while (--pos >= 0) {
+            thisArr[pos] ^= otherArr[pos];
+        }
+        // if (this.wlen < newLen) {
+        // System.arraycopy(otherArr, this.wlen, thisArr, this.wlen,
+        // newLen-this.wlen);
+        // }
+        // this.wlen = newLen;
+        return new ImmutableBitSet(thisArr, newLen * 64, newLen);
     }
 
-    while(++i < wlen) {
-      word = bits[i];
-      if (word!=0) return (i<<6) + BitUtil.ntz(word);
+    @Override
+    protected long[] bits() {
+        return bits;
     }
 
-    return -1;
-  }
-
-  /** Returns the index of the first set bit starting at the index specified.
-   *  -1 is returned if there are no more set bits.
-   */
-  public long nextSetBit(long index) {
-    int i = (int)(index>>>6);
-    if (i>=wlen) return -1;
-    int subIndex = (int)index & 0x3f; // index within the word
-    long word = bits[i] >>> subIndex;  // skip all the bits to the right of index
-
-    if (word!=0) {
-      return (((long)i)<<6) + (subIndex + BitUtil.ntz(word));
+    @Override
+    protected long numBits() {
+        return numBits;
     }
 
-    while(++i < wlen) {
-      word = bits[i];
-      if (word!=0) return (((long)i)<<6) + BitUtil.ntz(word);
+    @Override
+    protected int wlen() {
+        return wlen;
     }
 
-    return -1;
-  }
-
-
-  /** Returns the index of the first set bit starting downwards at
-   *  the index specified.
-   *  -1 is returned if there are no more set bits.
-   */
-  public int prevSetBit(int index) {
-    int i = index >> 6;
-    final int subIndex;
-    long word;
-    if (i >= wlen) {
-      i = wlen - 1;
-      if (i < 0) return -1;
-      subIndex = 63;  // last possible bit
-      word = bits[i];
-    } else {
-      if (i < 0) return -1;
-      subIndex = index & 0x3f;  // index within the word
-      word = (bits[i] << (63-subIndex));  // skip all the bits to the left of index
+    /**
+     * Return the cardinality of <code>a and not b</code> or <code>intersection(1, not(b))</code> of the two specified immutable bit sets.
+     *
+     * @param a first immutable bit set
+     * @param b second immutable bit set
+     * @return the cardinality of <code>a and not b</code> or <code>intersection(1, not(b))</code> of the two specified immutable bit sets
+     */
+    public static long andNotCount(final ImmutableBitSet a, final ImmutableBitSet b) {
+        long tot = BitUtil.pop_andnot(a.bits, b.bits, 0, Math.min(a.wlen, b.wlen));
+        if (a.wlen > b.wlen) {
+            tot += BitUtil.pop_array(a.bits, b.wlen, a.wlen - b.wlen);
+        }
+        return tot;
     }
 
-    if (word != 0) {
-      return (i << 6) + subIndex - Long.numberOfLeadingZeros(word); // See LUCENE-3197
+    /**
+     * Return the cardinality of the intersection of the two specified immutable bit sets.
+     *
+     * @param a first immutable bit set
+     * @param b second immutable bit set
+     * @return the cardinality of the intersection of the two specified immutable bit sets
+     */
+    public static long intersectionCount(final ImmutableBitSet a, final ImmutableBitSet b) {
+        return BitUtil.pop_intersect(a.bits, b.bits, 0, Math.min(a.wlen, b.wlen));
     }
 
-    while (--i >= 0) {
-      word = bits[i];
-      if (word !=0 ) {
-        return (i << 6) + 63 - Long.numberOfLeadingZeros(word);
-      }
+    /**
+     * Return the cardinality of the union of the two specified immutable bit sets.
+     *
+     * @param a first immutable bit set
+     * @param b second immutable bit set
+     * @return the cardinality of the union of the two specified immutable bit sets
+     */
+    public static long unionCount(final ImmutableBitSet a, final ImmutableBitSet b) {
+        long tot = BitUtil.pop_union(a.bits, b.bits, 0, Math.min(a.wlen, b.wlen));
+        if (a.wlen < b.wlen) {
+            tot += BitUtil.pop_array(b.bits, a.wlen, b.wlen - a.wlen);
+        }
+        else if (a.wlen > b.wlen) {
+            tot += BitUtil.pop_array(a.bits, b.wlen, a.wlen - b.wlen);
+        }
+        return tot;
     }
 
-    return -1;
-  }
-
-  /** Returns the index of the first set bit starting downwards at
-   *  the index specified.
-   *  -1 is returned if there are no more set bits.
-   */
-  public long prevSetBit(long index) {
-    int i = (int) (index >> 6);
-    final int subIndex;
-    long word;
-    if (i >= wlen) {
-      i = wlen - 1;
-      if (i < 0) return -1;
-      subIndex = 63;  // last possible bit
-      word = bits[i];
-    } else {
-      if (i < 0) return -1;
-      subIndex = (int)index & 0x3f;  // index within the word
-      word = (bits[i] << (63-subIndex));  // skip all the bits to the left of index
+    /**
+     * Return the cardinality of the exclusive or of the two specified immutable bit sets.
+     *
+     * @param a first immutable bit set
+     * @param b second immutable bit set
+     * @return the cardinality of the exclusive or of the two specified immutable bit sets
+     */
+    public static long xorCount(final ImmutableBitSet a, final ImmutableBitSet b) {
+        long tot = BitUtil.pop_xor(a.bits, b.bits, 0, Math.min(a.wlen, b.wlen));
+        if (a.wlen < b.wlen) {
+            tot += BitUtil.pop_array(b.bits, a.wlen, b.wlen - a.wlen);
+        }
+        else if (a.wlen > b.wlen) {
+            tot += BitUtil.pop_array(a.bits, b.wlen, a.wlen - b.wlen);
+        }
+        return tot;
     }
-
-    if (word != 0) {
-      return (((long)i)<<6) + subIndex - Long.numberOfLeadingZeros(word); // See LUCENE-3197
-    }
-
-    while (--i >= 0) {
-      word = bits[i];
-      if (word !=0 ) {
-        return (((long)i)<<6) + 63 - Long.numberOfLeadingZeros(word);
-      }
-    }
-
-    return -1;
-  }
-
-  /** this = this AND other */
-  //public ImmutableBitSet intersect(ImmutableBitSet other) {
-  public AbstractBitSet intersect(AbstractBitSet other) {
-      int newLen= Math.min(this.wlen,other.wlen());
-    long[] thisArr = this.bits.clone();
-    long[] otherArr = other.bits();
-    // testing against zero can be more efficient
-    int pos=newLen;
-    while(--pos>=0) {
-      thisArr[pos] &= otherArr[pos];
-    }
-    //if (this.wlen > newLen) {
-      // fill zeros from the new shorter length to the old length
-    //  Arrays.fill(bits,newLen,this.wlen,0);
-    //}
-    this.wlen = newLen;
-    return new ImmutableBitSet(thisArr, newLen, true);
-  }
-
-  /** this = this OR other */
-  //public ImmutableBitSet union(ImmutableBitSet other) {
-  public AbstractBitSet union(AbstractBitSet other) {
-      int newLen = Math.max(wlen,other.wlen());
-    //ensureCapacityWords(newLen);
-    //assert (numBits = Math.max(other.numBits, numBits)) >= 0;
-
-    long[] thisArr = this.bits.clone();
-    long[] otherArr = other.bits();
-    int pos=Math.min(wlen,other.wlen());
-    while(--pos>=0) {
-      thisArr[pos] |= otherArr[pos];
-    }
-    //if (this.wlen < newLen) {
-    //  System.arraycopy(otherArr, this.wlen, thisArr, this.wlen, newLen-this.wlen);
-    //}
-    //this.wlen = newLen;
-    return new ImmutableBitSet(thisArr, newLen, true);
-  }
-
-
-  /** Remove all elements set in other. this = this AND_NOT other */
-  //public ImmutableBitSet remove(ImmutableBitSet other) {
-  public AbstractBitSet remove(AbstractBitSet other) {
-      int idx = Math.min(wlen,other.wlen());
-    long[] thisArr = this.bits.clone();
-    long[] otherArr = other.bits();
-    while(--idx>=0) {
-      thisArr[idx] &= ~otherArr[idx];
-    }
-    return new ImmutableBitSet(thisArr, wlen, true);
-  }
-
-  /** this = this XOR other */
-    //  public ImmutableBitSet xor(ImmutableBitSet other) {
-  public AbstractBitSet xor(AbstractBitSet other) {
-      int newLen = Math.max(wlen,other.wlen());
-    //ensureCapacityWords(newLen);
-    //assert (numBits = Math.max(other.numBits, numBits)) >= 0;
-
-    long[] thisArr = this.bits.clone();
-    long[] otherArr = other.bits();
-    int pos=Math.min(wlen,other.wlen());
-    while(--pos>=0) {
-      thisArr[pos] ^= otherArr[pos];
-    }
-    //if (this.wlen < newLen) {
-    //  System.arraycopy(otherArr, this.wlen, thisArr, this.wlen, newLen-this.wlen);
-    //}
-    //this.wlen = newLen;
-    return new ImmutableBitSet(thisArr, newLen, true);
-  }
-
-
-  // some BitSet compatability methods
-
-  //** see {@link intersect} */
-  //public ImmutableBitSet and(ImmutableBitSet other) {
-  public AbstractBitSet and(AbstractBitSet other) {
-    return intersect(other);
-  }
-
-  //** see {@link union} */
-  //public ImmutableBitSet or(ImmutableBitSet other) {
-  public AbstractBitSet or(AbstractBitSet other) {
-    return union(other);
-  }
-
-  //** see {@link andNot} */
-  //public ImmutableBitSet andNot(ImmutableBitSet other) {
-  public AbstractBitSet andNot(AbstractBitSet other) {
-    return remove(other);
-  }
-
-  /** returns true if the sets have any elements in common */
-  //public boolean intersects(ImmutableBitSet other) {
-  public boolean intersects(AbstractBitSet other) {
-      int pos = Math.min(this.wlen, other.wlen());
-    long[] thisArr = this.bits;
-    long[] otherArr = other.bits();
-    while (--pos>=0) {
-      if ((thisArr[pos] & otherArr[pos])!=0) return true;
-    }
-    return false;
-  }
-
-  /** returns the number of 64 bit words it would take to hold numBits */
-  public static int bits2words(long numBits) {
-   return (int)(((numBits-1)>>>6)+1);
-  }
-
-
-  /** returns true if both sets have the same bits set */
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof ImmutableBitSet)) return false;
-    ImmutableBitSet a;
-    ImmutableBitSet b = (ImmutableBitSet)o;
-    // make a the larger set.
-    if (b.wlen > this.wlen) {
-      a = b; b=this;
-    } else {
-      a=this;
-    }
-
-    // check for any set bits out of the range of b
-    for (int i=a.wlen-1; i>=b.wlen; i--) {
-      if (a.bits[i]!=0) return false;
-    }
-
-    for (int i=b.wlen-1; i>=0; i--) {
-      if (a.bits[i] != b.bits[i]) return false;
-    }
-
-    return true;
-  }
-
-
-  @Override
-  public int hashCode() {
-    // Start with a zero hash and use a mix that results in zero if the input is zero.
-    // This effectively truncates trailing zeros without an explicit check.
-    long h = 0;
-    for (int i = bits.length; --i>=0;) {
-      h ^= bits[i];
-      h = (h << 1) | (h >>> 63); // rotate left
-    }
-    // fold leftmost bits into right and add a constant to prevent
-    // empty sets from returning 0, which is too common.
-    return (int)((h>>32) ^ h) + 0x98761234;
-  }
 }

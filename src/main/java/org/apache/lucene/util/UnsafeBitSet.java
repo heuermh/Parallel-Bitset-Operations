@@ -17,121 +17,55 @@
 
 package org.apache.lucene.util;
 
-import java.util.Arrays;
-
-/** An "open" BitSet implementation that allows direct access to the array of words
- * storing the bits.
- * <p/>
- * Unlike java.util.bitset, the fact that bits are packed into an array of longs
- * is part of the interface.  This allows efficient implementation of other algorithms
- * by someone other than the author.  It also allows one to efficiently implement
- * alternate serialization or interchange formats.
- * <p/>
- * <code>OpenBitSet</code> is faster than <code>java.util.BitSet</code> in most operations
- * and *much* faster at calculating cardinality of sets and results of set operations.
- * It can also handle sets of larger cardinality (up to 64 * 2**32-1)
- * <p/>
- * The goals of <code>OpenBitSet</code> are the fastest implementation possible, and
- * maximum code reuse.  Extra safety and encapsulation
- * may always be built on top, but if that's built in, the cost can never be removed (and
- * hence people re-implement their own version in order to get better performance).
- * If you want a "safe", totally encapsulated (and slower and limited) BitSet
- * class, use <code>java.util.BitSet</code>.
- * <p/>
- * <h3>Performance Results</h3>
- *
- Test system: Pentium 4, Sun Java 1.5_06 -server -Xbatch -Xmx64M
-<br/>BitSet size = 1,000,000
-<br/>Results are java.util.BitSet time divided by OpenBitSet time.
-<table border="1">
- <tr>
-  <th></th> <th>cardinality</th> <th>intersect_count</th> <th>union</th> <th>nextSetBit</th> <th>get</th> <th>iterator</th>
- </tr>
- <tr>
-  <th>50% full</th> <td>3.36</td> <td>3.96</td> <td>1.44</td> <td>1.46</td> <td>1.99</td> <td>1.58</td>
- </tr>
- <tr>
-   <th>1% full</th> <td>3.31</td> <td>3.90</td> <td>&nbsp;</td> <td>1.04</td> <td>&nbsp;</td> <td>0.99</td>
- </tr>
-</table>
-<br/>
-Test system: AMD Opteron, 64 bit linux, Sun Java 1.5_06 -server -Xbatch -Xmx64M
-<br/>BitSet size = 1,000,000
-<br/>Results are java.util.BitSet time divided by OpenBitSet time.
-<table border="1">
- <tr>
-  <th></th> <th>cardinality</th> <th>intersect_count</th> <th>union</th> <th>nextSetBit</th> <th>get</th> <th>iterator</th>
- </tr>
- <tr>
-  <th>50% full</th> <td>2.50</td> <td>3.50</td> <td>1.00</td> <td>1.03</td> <td>1.12</td> <td>1.25</td>
- </tr>
- <tr>
-   <th>1% full</th> <td>2.51</td> <td>3.49</td> <td>&nbsp;</td> <td>1.00</td> <td>&nbsp;</td> <td>1.02</td>
- </tr>
-</table>
+/**
+ * Unsafe bit set.
  */
+public class UnsafeBitSet extends MutableBitSet/* implements Cloneable, Serializable */ {
 
-public final class UnsafeBitSet extends MutableBitSet implements Cloneable/*, Serializable */ {
+    /**
+     * Create a new unsafe bit set with the default number of bits.
+     *
+     * @see DEFAULT_NUM_BITS
+     */
+    public UnsafeBitSet() {
+        super();
+    }
 
-  /** Constructs an OpenBitSet large enough to hold numBits.
-   *
-   * @param numBits
+    /**
+     * Create a new unsafe bit set with the specified number of bits.
+     *
+     * @param numBits number of bits
+     */
+    public UnsafeBitSet(final long numBits) {
+        super(numBits);
+    }
+
+  /**
+   * Create a new unsafe bit set from the specified <code>long[]</code>.
+     *
+     * @param bits bits stored in <code>long[]</code>
+     * @param wlen number of words/elements used in <code>bits</code>
    */
-  public UnsafeBitSet(long numBits) {
-      super(numBits);
-  }
-
-  public UnsafeBitSet() {
-    this(64);
-  }
-
-  /** Constructs an OpenBitSet from an existing long[].
-   * <br/>
-   * The first 64 bits are in long[0],
-   * with bit index 0 at the least significant bit, and bit index 63 at the most significant.
-   * Given a bit index,
-   * the word containing it is long[index/64], and it is at bit number index%64 within that word.
-   * <p>
-   * numWords are the number of elements in the array that contain
-   * set bits (non-zero longs).
-   * numWords should be &lt= bits.length, and
-   * any existing words in the array at position &gt= numWords should be zero.
-   *
-   */
-  public UnsafeBitSet(long[] bits, int numWords) {
-      super(bits, numWords, false);
-  }
-  
-
-  /** Expert: returns the long[] storing the bits */
-  public long[] getBits() { return bits; }
-
-  /** Expert: sets a new long[] to use as the bit storage */
-  public void setBits(long[] bits) { this.bits = bits; }
-
-  /** returns true if both sets have the same bits set */
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof UnsafeBitSet)) return false;
-    UnsafeBitSet a;
-    UnsafeBitSet b = (UnsafeBitSet)o;
-    // make a the larger set.
-    if (b.wlen > this.wlen) {
-      a = b; b=this;
-    } else {
-      a=this;
+    public UnsafeBitSet(final long[] bits, final int wlen) {
+        super(bits, wlen * 64, wlen);  // bits are not cloned in ctr
     }
 
-    // check for any set bits out of the range of b
-    for (int i=a.wlen-1; i>=b.wlen; i--) {
-      if (a.bits[i]!=0) return false;
+
+    /**
+     * Return the <code>long[]</code> backing this unsafe bit set.
+     *
+     * @return the <code>long[]</code> backing this unsafe bit set
+     */
+    public final long[] getBits() {
+        return bits;
     }
 
-    for (int i=b.wlen-1; i>=0; i--) {
-      if (a.bits[i] != b.bits[i]) return false;
+    /**
+     * Set the <code>long[]</code> backing this unsafe bit set to <code>bits</code>.
+     *
+     * @param bits bits stored in <code>long[]</code>
+     */
+    public final void setBits(final long[] bits) {
+        this.bits = bits;
     }
-
-    return true;
-  }
 }
