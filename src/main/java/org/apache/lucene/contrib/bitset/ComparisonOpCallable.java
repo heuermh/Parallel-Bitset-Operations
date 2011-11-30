@@ -19,6 +19,9 @@
 
 package org.apache.lucene.contrib.bitset;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.lucene.contrib.bitset.ops.ComparisonOp;
 import org.apache.lucene.util.ImmutableBitSet;
 import org.apache.lucene.util.MutableBitSet;
@@ -37,10 +40,10 @@ class ComparisonOpCallable<T> extends AbstractOpCallable<T[]> {
     @Override
     public T[] call() throws Exception {
         MutableBitSet accumulator = new MutableBitSet(finalBitsetSize);
-        T[] result = new T[toIndex - fromIndex];
+        Object[] result = new Object[toIndex - fromIndex];
         for (int i = fromIndex; i < toIndex; i++) {
             result[i - fromIndex] = operation.compute(accumulator, bs[i], toCompare);
         }
-        return result;
+        return ArrayUtils.typedArray(result);
     }
 }

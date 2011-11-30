@@ -26,6 +26,6 @@ public final class XOR implements AssociativeOp {
 
     @Override
     public void compute(final MutableBitSet accumulator, final ImmutableBitSet bitset) {
-        accumulator.xor((OpenBitSet) bitset);
+        accumulator.xor(bitset);
     }
 }

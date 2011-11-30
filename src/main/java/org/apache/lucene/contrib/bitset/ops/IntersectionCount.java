@@ -26,6 +26,6 @@ public final class IntersectionCount implements ComparisonOp<Long> {
 
     @Override
     public Long compute(final MutableBitSet accumulator, final ImmutableBitSet target, final ImmutableBitSet toCompare) {
-        return Long.valueOf(MutableBitSet.intersectionCount(target, toCompare));
+        return Long.valueOf(ImmutableBitSet.intersectionCount(target, toCompare));
     }
 }

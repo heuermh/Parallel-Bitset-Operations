@@ -23,32 +23,31 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.concurrent.Callable;
 
-import org.apache.lucene.util.OpenBitSet;
+import org.apache.lucene.util.AbstractBitSet;
+import org.apache.lucene.util.ImmutableBitSet;
 
 abstract class BitSetSlicer<T> {
 
-  public Collection<Callable<T>> sliceBitsets(OpenBitSet bs) {
-    int sliceSize = ((int) bs.capacity()) / Runtime.getRuntime().availableProcessors();
+    public Collection<Callable<T>> sliceBitsets(final ImmutableBitSet[] bs) {
+        int sliceSize = bs.length / Runtime.getRuntime().availableProcessors(); // make this configurable
 
-    int numOfOps = ((int) bs.capacity()) / sliceSize;
-    if (bs.capacity() % sliceSize != 0) {
-      numOfOps++;
+        int numOfOps = bs.length / sliceSize;
+        if (bs.length % sliceSize != 0) {
+            numOfOps++;
+        }
+
+        Collection<Callable<T>> ops = new LinkedList<Callable<T>>();
+        for (int i = 0; i < numOfOps; i++) {
+            int startIndex = i * sliceSize;
+            ops.add(newOpCallable(bs, startIndex, lastIndex(bs.length, startIndex, sliceSize)));
+        }
+        return ops;
     }
 
-    Collection<Callable<T>> ops = new LinkedList<Callable<T>>();
-    for (int i = 0; i < numOfOps; i++) {
-      int startIndex = i * sliceSize;
-      ops.add(newOpCallable(bs, startIndex, lastIndex(bs.capacity(), startIndex, sliceSize)));
+    protected abstract Callable<T> newOpCallable(ImmutableBitSet[] bs, int startIndex, int i);
+
+    private int lastIndex(final int numberOfBitsets, final int startIndex, final int sliceSize) {
+        int remaining = numberOfBitsets - startIndex;
+        return remaining > sliceSize ? startIndex + sliceSize : startIndex + remaining;
     }
-
-    return ops;
-  }
-
-  protected abstract Callable<T> newOpCallable(OpenBitSet bs, int startIndex, int i);
-
-  private int lastIndex(int numberOfBitsets, int startIndex, int sliceSize) {
-    int remaining = numberOfBitsets - startIndex;
-    return remaining > sliceSize ? startIndex + sliceSize : startIndex + remaining;
-  }
-
 }
