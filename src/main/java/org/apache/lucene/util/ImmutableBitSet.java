@@ -522,11 +522,13 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
     }
 
     /**
-     * Return the cardinality of <code>a and not b</code> or <code>intersection(1, not(b))</code> of the two specified immutable bit sets.
+     * Return the cardinality of <code>a and not b</code> or <code>intersection(1, not(b))</code> of the
+     * two specified immutable bit sets.
      *
      * @param a first immutable bit set
      * @param b second immutable bit set
-     * @return the cardinality of <code>a and not b</code> or <code>intersection(1, not(b))</code> of the two specified immutable bit sets
+     * @return the cardinality of <code>a and not b</code> or <code>intersection(1, not(b))</code> of the 
+     *    two specified immutable bit sets
      */
     public static long andNotCount(final ImmutableBitSet a, final ImmutableBitSet b) {
         long tot = BitUtil.pop_andnot(a.bits, b.bits, 0, Math.min(a.wlen, b.wlen));

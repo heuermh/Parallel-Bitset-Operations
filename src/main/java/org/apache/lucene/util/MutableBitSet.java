@@ -51,23 +51,23 @@ public class MutableBitSet extends AbstractBitSet/* implements Cloneable, Serial
         wlen = bits.length;
     }
 
-  /**
-   * Create a new mutable bit set from the specified <code>long[]</code>.
+    /**
+     * Create a new mutable bit set from the specified <code>long[]</code>.
      *
      * @param bits bits stored in <code>long[]</code>
      * @param wlen number of words/elements used in <code>bits</code>
-   */
+     */
     public MutableBitSet(final long[] bits, final int wlen) {
         this(bits.clone(), wlen * 64, wlen);
     }
 
-  /**
-   * Create a new mutable bit set from the specified <code>long[]</code>.
+    /**
+     * Create a new mutable bit set from the specified <code>long[]</code>.
      *
      * @param bits bits stored in <code>long[]</code>
      * @param numBits number of bits
      * @param wlen number of words/elements used in <code>bits</code>
-   */
+     */
     protected MutableBitSet(final long[] bits, final long numBits, final int wlen) {
         this.bits = bits;
         this.wlen = wlen;
@@ -750,11 +750,13 @@ public class MutableBitSet extends AbstractBitSet/* implements Cloneable, Serial
     }
 
     /**
-     * Return the cardinality of <code>a and not b</code> or <code>intersection(1, not(b))</code> of the two specified mutable bit sets.  Neither set is modified.
+     * Return the cardinality of <code>a and not b</code> or <code>intersection(1, not(b))</code> of the
+     * two specified mutable bit sets.  Neither set is modified.
      *
      * @param a first mutable bit set
      * @param b second mutable bit set
-     * @return the cardinality of <code>a and not b</code> or <code>intersection(1, not(b))</code> of the two specified mutable bit sets
+     * @return the cardinality of <code>a and not b</code> or <code>intersection(1, not(b))</code> of the
+     *    two specified mutable bit sets
      */
     public static long andNotCount(final MutableBitSet a, final MutableBitSet b) {
         long tot = BitUtil.pop_andnot(a.bits, b.bits, 0, Math.min(a.wlen, b.wlen));
