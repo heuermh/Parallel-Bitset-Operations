@@ -19,15 +19,16 @@
 
 package org.apache.lucene.contrib.bitset.test;
 
-import org.apache.lucene.contrib.bitset.BitsetOperationsExecutor;
-import org.junit.Before;
+//import org.apache.lucene.contrib.bitset.BitsetOperationsExecutor;
+//import org.junit.Before;
 
 public class WithoutSlicingBitsetBasicOperationTest extends AbstractBitsetBasicOperationsTest {
-
+    // empty
+    /*
   @Before
   public void setup() {
     super.setup();
     bitsetOperationsExecutor = new BitsetOperationsExecutor(threadPool, 10000);
   }
-
+    */
 }

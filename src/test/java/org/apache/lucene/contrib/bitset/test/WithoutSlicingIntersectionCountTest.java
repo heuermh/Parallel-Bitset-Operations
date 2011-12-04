@@ -19,14 +19,16 @@
 
 package org.apache.lucene.contrib.bitset.test;
 
-import org.apache.lucene.contrib.bitset.BitsetOperationsExecutor;
-import org.junit.Before;
+//import org.apache.lucene.contrib.bitset.BitsetOperationsExecutor;
+//import org.junit.Before;
 
 public class WithoutSlicingIntersectionCountTest extends AbstractComparisonOperationsTest {
-
+    // empty
+    /*
   @Before
   public void setup() {
     super.setup();
     bitsetOperationsExecutor = new BitsetOperationsExecutor(threadPool, 10000);
   }
+    */
 }
