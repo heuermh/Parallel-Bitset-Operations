@@ -50,11 +50,11 @@ public abstract class AbstractBitSet {
     public abstract void trimTrailingZeros();
 
     // may return this or a copy of this
-    public abstract AbstractBitSet intersect(AbstractBitSet other);
-    public abstract AbstractBitSet union(AbstractBitSet other);
+    public abstract AbstractBitSet intersect(AbstractBitSet other); // just forwards to and
+    public abstract AbstractBitSet union(AbstractBitSet other); // just forwards to or
     public abstract AbstractBitSet remove(AbstractBitSet other);
     public abstract AbstractBitSet xor(AbstractBitSet other);
     public abstract AbstractBitSet and(AbstractBitSet other);
     public abstract AbstractBitSet or(AbstractBitSet other);
-    public abstract AbstractBitSet andNot(AbstractBitSet other);
+    public abstract AbstractBitSet andNot(AbstractBitSet other); // just forwards to remove
 }
