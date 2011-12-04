@@ -50,6 +50,7 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
     }
 
 
+    // reorder methods to match AbstractBitSet
     @Override
     public AbstractBitSet and(final AbstractBitSet other) {
         return intersect(other);
@@ -71,11 +72,6 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
     }
 
     @Override
-    public void clear(final int startIndex, final int endIndex) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void clear(final long index) {
         throw new UnsupportedOperationException();
     }
@@ -87,11 +83,6 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
 
     @Override
     public void ensureCapacity(final long numBits) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void ensureCapacityWords(final int numWords) {
         throw new UnsupportedOperationException();
     }
 
@@ -131,39 +122,17 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
     }
 
     @Override
-    public void fastClear(final int index) {
+    public void clearQuick(final long index) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void fastClear(final long index) {
+    public void flipQuick(final long index) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void fastFlip(final int index) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void fastFlip(final long index) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean fastGet(final int index) {
-        assert index >= 0 && index < numBits;
-        int i = index >> 6; // div 64
-        // signed shift will keep a negative index and force an
-        // array-index-out-of-bounds-exception, removing the need for an
-        // explicit check.
-        int bit = index & 0x3f; // mod 64
-        long bitmask = 1L << bit;
-        return (bits[i] & bitmask) != 0;
-    }
-
-    @Override
-    public boolean fastGet(final long index) {
+    public boolean getQuick(final long index) {
         assert index >= 0 && index < numBits;
         int i = (int) (index >> 6); // div 64
         int bit = (int) index & 0x3f; // mod 64
@@ -172,12 +141,7 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
     }
 
     @Override
-    public void fastSet(final int index) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void fastSet(final long index) {
+    public void setQuick(final long index) {
         throw new UnsupportedOperationException();
     }
 
@@ -192,28 +156,8 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
     }
 
     @Override
-    public boolean flipAndGet(final int index) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public boolean flipAndGet(final long index) {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean get(final int index) {
-        int i = index >> 6; // div 64
-        // signed shift will keep a negative index and force an
-        // array-index-out-of-bounds-exception, removing the need for an
-        // explicit check.
-        if (i >= bits.length) {
-            return false;
-        }
-
-        int bit = index & 0x3f; // mod 64
-        long bitmask = 1L << bit;
-        return (bits[i] & bitmask) != 0;
     }
 
     @Override
@@ -228,15 +172,11 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
     }
 
     @Override
-    public boolean getAndSet(final int index) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public boolean getAndSet(final long index) {
         throw new UnsupportedOperationException();
     }
 
+    /* no long version, unfortunately
     @Override
     public int getBit(final int index) {
         assert index >= 0 && index < numBits;
@@ -244,6 +184,7 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
         int bit = index & 0x3f; // mod 64
         return ((int) (bits[i] >>> bit)) & 0x01;
     }
+    */
 
     @Override
     public int hashCode() {
@@ -295,11 +236,6 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
         return cardinality() == 0;
     }
 
-    @Override
-    public int length() {
-        return bits.length << 6;
-    }
-
     /**
      * Return a new mutable copy of this immutable bit set.
      *
@@ -307,28 +243,6 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
      */
     public MutableBitSet mutableCopy() {
         return new MutableBitSet(bits, wlen); // bits is cloned in ctr
-    }
-
-    @Override
-    public int nextSetBit(final int index) {
-        int i = index >> 6;
-        if (i >= wlen) {
-            return -1;
-        }
-        int subIndex = index & 0x3f; // index within the word
-        long word = bits[i] >> subIndex; // skip all the bits to the right of index
-
-        if (word != 0) {
-            return (i << 6) + subIndex + BitUtil.ntz(word);
-        }
-
-        while (++i < wlen) {
-            word = bits[i];
-            if (word != 0) {
-                return (i << 6) + BitUtil.ntz(word);
-            }
-        }
-        return -1;
     }
 
     @Override
@@ -356,40 +270,6 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
     @Override
     public AbstractBitSet or(final AbstractBitSet other) {
         return union(other);
-    }
-
-    @Override
-    public int prevSetBit(final int index) {
-        int i = index >> 6;
-        final int subIndex;
-        long word;
-        if (i >= wlen) {
-            i = wlen - 1;
-            if (i < 0) {
-                return -1;
-            }
-            subIndex = 63; // last possible bit
-            word = bits[i];
-        }
-        else {
-            if (i < 0) {
-                return -1;
-            }
-            subIndex = index & 0x3f; // index within the word
-            word = (bits[i] << (63 - subIndex)); // skip all the bits to the left of index
-        }
-
-        if (word != 0) {
-            return (i << 6) + subIndex - Long.numberOfLeadingZeros(word); // See LUCENE-3197
-        }
-
-        while (--i >= 0) {
-            word = bits[i];
-            if (word != 0) {
-                return (i << 6) + 63 - Long.numberOfLeadingZeros(word);
-            }
-        }
-        return -1;
     }
 
     @Override
@@ -445,11 +325,6 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
     @Override
     public void set(final long startIndex, final long endIndex) {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public long size() {
-        return capacity();
     }
 
     @Override

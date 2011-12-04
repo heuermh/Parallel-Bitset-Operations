@@ -24,41 +24,28 @@ public abstract class AbstractBitSet {
     protected abstract long numBits();
     protected abstract int wlen();
 
-    public abstract int length(); // bits.length << 6;
-    public abstract long size(); // same as capacity()
-    public abstract long capacity(); // 1 greater than the index of the last bit
+    public abstract long capacity(); // 1 greater than the index of the last (set?) bit
     public abstract long cardinality(); // number of bits set to true
     public abstract boolean isEmpty(); // cardinality == 0
-    public abstract boolean get(int index);
-    public abstract boolean fastGet(int index);
     public abstract boolean get(long index);
-    public abstract boolean fastGet(long index);
-    public abstract int getBit(int index);
-    public abstract int nextSetBit(int index);
+    public abstract boolean getQuick(long index);
     public abstract long nextSetBit(long index);
-    public abstract int prevSetBit(int index);
     public abstract long prevSetBit(long index);
     public abstract boolean intersects(AbstractBitSet other);
+    //public abstract void forEach(Procedure<Long> procedure);
 
     // optional
     public abstract void set(long index);
-    public abstract void fastSet(int index);
-    public abstract void fastSet(long index);
     public abstract void set(long startIndex, long endIndex);
-    public abstract void fastClear(int index);
-    public abstract void fastClear(long index);
+    public abstract void setQuick(long index);
     public abstract void clear(long index);
-    public abstract void clear(int startIndex, int endIndex);
     public abstract void clear(long startIndex, long endIndex);
-    public abstract boolean getAndSet(int index);
+    public abstract void clearQuick(long index);
     public abstract boolean getAndSet(long index);
-    public abstract void fastFlip(int index);
-    public abstract void fastFlip(long index);
     public abstract void flip(long index);
-    public abstract boolean flipAndGet(int index);
-    public abstract boolean flipAndGet(long index);
     public abstract void flip(long startIndex, long endIndex);
-    public abstract void ensureCapacityWords(int numWords);
+    public abstract void flipQuick(long index);
+    public abstract boolean flipAndGet(long index);
     public abstract void ensureCapacity(long numBits);
     public abstract void trimTrailingZeros();
 
