@@ -40,12 +40,12 @@ public class UnsafeBitSet extends MutableBitSet/* implements Cloneable, Serializ
         super(numBits);
     }
 
-  /**
-   * Create a new unsafe bit set from the specified <code>long[]</code>.
+    /**
+     * Create a new unsafe bit set from the specified <code>long[]</code>.
      *
      * @param bits bits stored in <code>long[]</code>
      * @param wlen number of words/elements used in <code>bits</code>
-   */
+     */
     public UnsafeBitSet(final long[] bits, final int wlen) {
         super(bits, wlen * 64, wlen);  // bits are not cloned in ctr
     }
