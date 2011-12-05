@@ -29,10 +29,11 @@ import org.junit.Test;
  * Unit test for ImmutableBitSet.
  */
 public final class ImmutableBitSetTest extends AbstractBitSetTest {
-    private static final long N = 1024L;
+    private static final long N = 800L;
     private static ImmutableBitSet empty;
     private static ImmutableBitSet full;
     private static ImmutableBitSet partial;
+    private static ImmutableBitSet half;
 
     @Override
     protected AbstractBitSet createBitSet() {
@@ -49,13 +50,18 @@ public final class ImmutableBitSetTest extends AbstractBitSetTest {
 
         m.set(0L, N);
         full = m.immutableCopy(); 
+
+        MutableBitSet h = new MutableBitSet(N / 2L);
+        h.set(N / 4L, N / 2L);
+        half = h.immutableCopy();
     }
 
     @Test
     public void testCapacity() {
-        assertEquals(N, empty.capacity());
-        assertEquals(N, partial.capacity());
-        assertEquals(N, full.capacity());
+        assertTrue(empty.capacity() >= N);
+        assertTrue(partial.capacity() >= N);
+        assertTrue(full.capacity() >= N);
+        assertTrue(half.capacity() >= N / 2L);
     }
 
     @Test
@@ -63,6 +69,7 @@ public final class ImmutableBitSetTest extends AbstractBitSetTest {
         assertEquals(0L, empty.cardinality());
         assertEquals(N / 2L, partial.cardinality());
         assertEquals(N, full.cardinality());
+        assertEquals(N / 4L, half.cardinality());
     }
 
     @Test
@@ -70,6 +77,7 @@ public final class ImmutableBitSetTest extends AbstractBitSetTest {
         assertTrue(empty.isEmpty());
         assertFalse(partial.isEmpty());
         assertFalse(full.isEmpty());
+        assertFalse(half.isEmpty());
     }
 
     @Test
@@ -127,14 +135,22 @@ public final class ImmutableBitSetTest extends AbstractBitSetTest {
         assertFalse(empty.intersects(empty));
         assertFalse(empty.intersects(partial));
         assertFalse(empty.intersects(full));
+        assertFalse(empty.intersects(half));
 
         assertFalse(partial.intersects(empty));
         assertTrue(partial.intersects(partial));
         assertTrue(partial.intersects(full));
+        assertFalse(partial.intersects(half));
 
         assertFalse(full.intersects(empty));
         assertTrue(full.intersects(partial));
         assertTrue(full.intersects(full));
+        assertTrue(full.intersects(half));
+
+        assertFalse(half.intersects(empty));
+        assertFalse(half.intersects(partial));
+        assertTrue(half.intersects(full));
+        assertTrue(half.intersects(half));
     }
 
     @Test(expected=UnsupportedOperationException.class)
@@ -206,6 +222,7 @@ public final class ImmutableBitSetTest extends AbstractBitSetTest {
 
         assertTrue(empty.intersect(partial).isEmpty());
         assertTrue(empty.intersect(full).isEmpty());
+        assertTrue(empty.intersect(half).isEmpty());
 
         AbstractBitSet partialIntersection = partial.intersect(partial);
         assertNotNull(partialIntersection);
@@ -214,6 +231,7 @@ public final class ImmutableBitSetTest extends AbstractBitSetTest {
 
         assertTrue(partial.intersect(empty).isEmpty());
         assertEquals((N / 2L), partial.intersect(full).cardinality());
+        assertTrue(partial.intersect(half).isEmpty());
 
         AbstractBitSet fullIntersection = full.intersect(full);
         assertNotNull(fullIntersection);
@@ -222,6 +240,16 @@ public final class ImmutableBitSetTest extends AbstractBitSetTest {
 
         assertTrue(full.intersect(empty).isEmpty());
         assertEquals((N / 2L), full.intersect(partial).cardinality());
+        assertEquals(N / 4L, full.intersect(half).cardinality());
+
+        AbstractBitSet halfIntersection = half.intersect(half);
+        assertNotNull(halfIntersection);
+        assertNotSame(half, halfIntersection);
+        assertEquals(N / 4L, halfIntersection.cardinality());
+
+        assertTrue(half.intersect(empty).isEmpty());
+        assertTrue(half.intersect(partial).isEmpty());
+        assertEquals(N / 4L, half.intersect(full).cardinality());
     }
 
     @Test
@@ -233,6 +261,7 @@ public final class ImmutableBitSetTest extends AbstractBitSetTest {
 
         assertEquals((N / 2L), empty.union(partial).cardinality());
         assertEquals(N, empty.union(full).cardinality());
+        assertEquals(N / 4L, empty.union(half).cardinality());
 
         AbstractBitSet partialUnion = partial.union(partial);
         assertNotNull(partialUnion);
@@ -241,6 +270,7 @@ public final class ImmutableBitSetTest extends AbstractBitSetTest {
 
         assertEquals((N / 2L), partial.union(empty).cardinality());
         assertEquals(N, partial.union(full).cardinality());
+        assertEquals(3L * N / 4L, partial.union(half).cardinality());
 
         MutableBitSet m = new MutableBitSet(N);
         m.set(0L, (N / 2L));
@@ -253,6 +283,16 @@ public final class ImmutableBitSetTest extends AbstractBitSetTest {
 
         assertEquals(N, full.union(empty).cardinality());
         assertEquals(N, full.union(partial).cardinality());
+        assertEquals(N, full.union(half).cardinality());
+
+        AbstractBitSet halfUnion = half.union(half);
+        assertNotNull(halfUnion);
+        assertNotSame(half, halfUnion);
+        assertEquals(N / 4L, halfUnion.cardinality());
+
+        assertEquals(N / 4L, half.union(empty).cardinality());
+        assertEquals(3L * N / 4L, half.union(partial).cardinality());
+        assertEquals(N, half.union(full).cardinality());
     }
 
     @Test
@@ -264,6 +304,7 @@ public final class ImmutableBitSetTest extends AbstractBitSetTest {
 
         assertTrue(empty.remove(partial).isEmpty());
         assertTrue(empty.remove(full).isEmpty());
+        assertTrue(empty.remove(half).isEmpty());
 
         AbstractBitSet partialRemove = partial.remove(partial);
         assertNotNull(partialRemove);
@@ -272,6 +313,7 @@ public final class ImmutableBitSetTest extends AbstractBitSetTest {
 
         assertEquals((N / 2L), partial.remove(empty).cardinality());
         assertTrue(partial.remove(full).isEmpty());
+        assertEquals(N / 2L, partial.remove(half).cardinality());
 
         AbstractBitSet fullRemove = full.remove(full);
         assertNotNull(fullRemove);
@@ -280,6 +322,16 @@ public final class ImmutableBitSetTest extends AbstractBitSetTest {
 
         assertEquals(N, full.remove(empty).cardinality());
         assertEquals((N / 2L), full.remove(partial).cardinality());
+        assertEquals(3L * N / 4L, full.remove(half).cardinality());
+
+        AbstractBitSet halfRemove = half.remove(half);
+        assertNotNull(halfRemove);
+        assertNotSame(half, halfRemove);
+        assertTrue(halfRemove.isEmpty());
+
+        assertEquals(N / 4L, half.remove(empty).cardinality());
+        assertEquals(N / 4L, half.remove(partial).cardinality());
+        assertTrue(half.remove(full).isEmpty());
     }
 
     @Test
@@ -291,6 +343,7 @@ public final class ImmutableBitSetTest extends AbstractBitSetTest {
 
         assertEquals((N / 2L), empty.xor(partial).cardinality());
         assertEquals(N, empty.xor(full).cardinality());
+        assertEquals(N / 4L, empty.xor(half).cardinality());
 
         AbstractBitSet partialXor = partial.xor(partial);
         assertNotNull(partialXor);
@@ -299,6 +352,7 @@ public final class ImmutableBitSetTest extends AbstractBitSetTest {
 
         assertEquals((N / 2L), partial.xor(empty).cardinality());
         assertEquals((N / 2L), partial.xor(full).cardinality());
+        assertEquals(3L * N / 4L, partial.xor(half).cardinality());
 
         AbstractBitSet fullXor = full.xor(full);
         assertNotNull(fullXor);
@@ -307,6 +361,16 @@ public final class ImmutableBitSetTest extends AbstractBitSetTest {
 
         assertEquals(N, full.xor(empty).cardinality());
         assertEquals((N / 2L), full.xor(partial).cardinality());
+        assertEquals(3L * N / 4L, full.xor(half).cardinality());
+
+        AbstractBitSet halfXor = half.xor(half);
+        assertNotNull(halfXor);
+        assertNotSame(half, halfXor);
+        assertTrue(halfXor.isEmpty());
+
+        assertEquals(N / 4L, half.xor(empty).cardinality());
+        assertEquals(3L * N / 4L, half.xor(partial).cardinality());
+        assertEquals(3L * N / 4L, half.xor(full).cardinality());
     }
 
     @Test

@@ -29,10 +29,11 @@ import org.junit.Test;
  * Unit test for MutableBitSet.
  */
 public class MutableBitSetTest extends AbstractBitSetTest {
-    private static final long N = 64L;
+    private static final long N = 800L;
     private MutableBitSet empty;
     private MutableBitSet full;
     private MutableBitSet partial;
+    private MutableBitSet half;
 
     @Override
     protected AbstractBitSet createBitSet() {
@@ -47,13 +48,16 @@ public class MutableBitSetTest extends AbstractBitSetTest {
         partial.set((N / 2L), N);
         full = new MutableBitSet(N);
         full.set(0L, N);
+        half = new MutableBitSet((N / 2L));
+        half.set((N / 4L), (N / 2L));
     }
 
     @Test
     public void testCapacity() {
-        assertEquals(N, empty.capacity());
-        assertEquals(N, partial.capacity());
-        assertEquals(N, full.capacity());
+        assertTrue(empty.capacity() >= N);
+        assertTrue(partial.capacity() >= N);
+        assertTrue(full.capacity() >= N);
+        assertTrue(half.capacity() >= (N / 2L));
     }
 
     @Test
@@ -61,6 +65,7 @@ public class MutableBitSetTest extends AbstractBitSetTest {
         assertEquals(0L, empty.cardinality());
         assertEquals(N / 2L, partial.cardinality());
         assertEquals(N, full.cardinality());
+        assertEquals(N / 4L, half.cardinality());
     }
 
     @Test
@@ -68,6 +73,8 @@ public class MutableBitSetTest extends AbstractBitSetTest {
         assertTrue(empty.isEmpty());
         assertFalse(partial.isEmpty());
         assertFalse(full.isEmpty());
+        assertFalse(half.isEmpty());
+
     }
 
     @Test
@@ -125,14 +132,22 @@ public class MutableBitSetTest extends AbstractBitSetTest {
         assertFalse(empty.intersects(empty));
         assertFalse(empty.intersects(partial));
         assertFalse(empty.intersects(full));
+        assertFalse(empty.intersects(half));
 
         assertFalse(partial.intersects(empty));
         assertTrue(partial.intersects(partial));
         assertTrue(partial.intersects(full));
+        assertFalse(partial.intersects(half));
 
         assertFalse(full.intersects(empty));
         assertTrue(full.intersects(partial));
         assertTrue(full.intersects(full));
+        assertTrue(full.intersects(half));
+
+        assertFalse(half.intersects(empty));
+        assertFalse(half.intersects(partial));
+        assertTrue(half.intersects(full));
+        assertTrue(half.intersects(half));
     }
 
     @Test
