@@ -18,8 +18,6 @@ package org.apache.lucene.util;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Before;
@@ -174,49 +172,49 @@ public class MutableBitSetTest extends AbstractBitSetTest {
     }
 
     @Test
-    public void testIntersectionCount() {
-        assertEquals(0L, MutableBitSet.intersectionCount(empty, empty));
-        assertEquals(0L, MutableBitSet.intersectionCount(empty, partial));
-        assertEquals(0L, MutableBitSet.intersectionCount(empty, full));
-        assertEquals(0L, MutableBitSet.intersectionCount(partial, empty));
-        assertEquals((N / 2L), MutableBitSet.intersectionCount(partial, partial));
-        assertEquals((N / 2L), MutableBitSet.intersectionCount(partial, full));
-        assertEquals(0L, MutableBitSet.intersectionCount(full, empty));
-        assertEquals((N / 2L), MutableBitSet.intersectionCount(full, partial));
-        assertEquals(N, MutableBitSet.intersectionCount(full, full));
+    public void testAndCount() {
+        assertEquals(0L, MutableBitSet.andCount(empty, empty));
+        assertEquals(0L, MutableBitSet.andCount(empty, partial));
+        assertEquals(0L, MutableBitSet.andCount(empty, full));
+        assertEquals(0L, MutableBitSet.andCount(partial, empty));
+        assertEquals((N / 2L), MutableBitSet.andCount(partial, partial));
+        assertEquals((N / 2L), MutableBitSet.andCount(partial, full));
+        assertEquals(0L, MutableBitSet.andCount(full, empty));
+        assertEquals((N / 2L), MutableBitSet.andCount(full, partial));
+        assertEquals(N, MutableBitSet.andCount(full, full));
     }
 
     @Test(expected=NullPointerException.class)
-    public void testIntersectionCountNullA() {
-        MutableBitSet.intersectionCount(null, empty);
+    public void testAndCountNullA() {
+        MutableBitSet.andCount(null, empty);
     }
 
     @Test(expected=NullPointerException.class)
-    public void testIntersectionCountNullB() {
-        MutableBitSet.intersectionCount(empty, null);
+    public void testAndCountNullB() {
+        MutableBitSet.andCount(empty, null);
     }
 
     @Test
-    public void testUnionCount() {
-        assertEquals(0L, MutableBitSet.unionCount(empty, empty));
-        assertEquals((N / 2L), MutableBitSet.unionCount(empty, partial));
-        assertEquals(N, MutableBitSet.unionCount(empty, full));
-        assertEquals((N / 2L), MutableBitSet.unionCount(partial, empty));
-        assertEquals((N / 2L), MutableBitSet.unionCount(partial, partial));
-        assertEquals(N, MutableBitSet.unionCount(partial, full));
-        assertEquals(N, MutableBitSet.unionCount(full, empty));
-        assertEquals(N, MutableBitSet.unionCount(full, partial));
-        assertEquals(N, MutableBitSet.unionCount(full, full));
+    public void testOrCount() {
+        assertEquals(0L, MutableBitSet.orCount(empty, empty));
+        assertEquals((N / 2L), MutableBitSet.orCount(empty, partial));
+        assertEquals(N, MutableBitSet.orCount(empty, full));
+        assertEquals((N / 2L), MutableBitSet.orCount(partial, empty));
+        assertEquals((N / 2L), MutableBitSet.orCount(partial, partial));
+        assertEquals(N, MutableBitSet.orCount(partial, full));
+        assertEquals(N, MutableBitSet.orCount(full, empty));
+        assertEquals(N, MutableBitSet.orCount(full, partial));
+        assertEquals(N, MutableBitSet.orCount(full, full));
     }
 
     @Test(expected=NullPointerException.class)
-    public void testUnionCountNullA() {
-        MutableBitSet.unionCount(null, empty);
+    public void testOrCountNullA() {
+        MutableBitSet.orCount(null, empty);
     }
 
     @Test(expected=NullPointerException.class)
-    public void testUnionCountNullB() {
-        MutableBitSet.unionCount(empty, null);
+    public void testOrCountNullB() {
+        MutableBitSet.orCount(empty, null);
     }
 
     @Test

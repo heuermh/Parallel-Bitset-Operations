@@ -22,10 +22,10 @@ package org.apache.lucene.contrib.bitset.ops;
 import org.apache.lucene.util.ImmutableBitSet;
 import org.apache.lucene.util.MutableBitSet;
 
-public final class IntersectionCount implements ComparisonOp<Long> {
+public final class IntersectionCount implements ComparisonOp<Long> { // --> AndCount
 
     @Override
     public Long compute(final MutableBitSet accumulator, final ImmutableBitSet target, final ImmutableBitSet toCompare) {
-        return Long.valueOf(ImmutableBitSet.intersectionCount(target, toCompare));
+        return Long.valueOf(ImmutableBitSet.andCount(target, toCompare));
     }
 }

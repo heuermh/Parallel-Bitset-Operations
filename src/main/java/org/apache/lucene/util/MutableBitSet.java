@@ -367,54 +367,11 @@ public class MutableBitSet extends AbstractBitSet/* implements Cloneable, Serial
         wlen = idx + 1;
     }
 
-    @Override
-    public AbstractBitSet intersect(final AbstractBitSet other) {
-        int newLen = Math.min(this.wlen, other.wlen());
-        long[] thisArr = this.bits;
-        long[] otherArr = other.bits();
-        // testing against zero can be more efficient
-        int pos = newLen;
-        while (--pos >= 0) {
-            thisArr[pos] &= otherArr[pos];
-        }
-        if (this.wlen > newLen) {
-            // fill zeros from the new shorter length to the old length
-            Arrays.fill(bits, newLen, this.wlen, 0);
-        }
-        this.wlen = newLen;
-        return this;
-    }
-
-    @Override
-    public AbstractBitSet union(final AbstractBitSet other) {
-        int newLen = Math.max(wlen, other.wlen());
-        ensureCapacityWords(newLen);
-        assert (numBits = Math.max(other.numBits(), numBits)) >= 0;
-
-        long[] thisArr = this.bits;
-        long[] otherArr = other.bits();
-        int pos = Math.min(wlen, other.wlen());
-        while (--pos >= 0) {
-            thisArr[pos] |= otherArr[pos];
-        }
-        if (this.wlen < newLen) {
-            System.arraycopy(otherArr, this.wlen, thisArr, this.wlen, newLen - this.wlen);
-        }
-        this.wlen = newLen;
-        return this;
-    }
-
-    @Override
-    public AbstractBitSet remove(final AbstractBitSet other) {
-        int idx = Math.min(wlen, other.wlen());
-        long[] thisArr = this.bits;
-        long[] otherArr = other.bits();
-        while (--idx >= 0) {
-            thisArr[idx] &= ~otherArr[idx];
-        }
-        return this;
-    }
-
+    /**
+     * {@inheritDoc}
+     *
+     * This mutable bit set is modified in place and a reference to this is returned for method chaining.
+     */
     @Override
     public AbstractBitSet xor(final AbstractBitSet other) {
         int newLen = Math.max(wlen, other.wlen());
@@ -434,19 +391,67 @@ public class MutableBitSet extends AbstractBitSet/* implements Cloneable, Serial
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * This mutable bit set is modified in place and a reference to this is returned for method chaining.
+     */
     @Override
     public AbstractBitSet and(final AbstractBitSet other) {
-        return intersect(other);
+        int newLen = Math.min(this.wlen, other.wlen());
+        long[] thisArr = this.bits;
+        long[] otherArr = other.bits();
+        // testing against zero can be more efficient
+        int pos = newLen;
+        while (--pos >= 0) {
+            thisArr[pos] &= otherArr[pos];
+        }
+        if (this.wlen > newLen) {
+            // fill zeros from the new shorter length to the old length
+            Arrays.fill(bits, newLen, this.wlen, 0);
+        }
+        this.wlen = newLen;
+        return this;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * This mutable bit set is modified in place and a reference to this is returned for method chaining.
+     */
     @Override
     public AbstractBitSet or(final AbstractBitSet other) {
-        return union(other);
+        int newLen = Math.max(wlen, other.wlen());
+        ensureCapacityWords(newLen);
+        assert (numBits = Math.max(other.numBits(), numBits)) >= 0;
+
+        long[] thisArr = this.bits;
+        long[] otherArr = other.bits();
+        int pos = Math.min(wlen, other.wlen());
+        while (--pos >= 0) {
+            thisArr[pos] |= otherArr[pos];
+        }
+        if (this.wlen < newLen) {
+            System.arraycopy(otherArr, this.wlen, thisArr, this.wlen, newLen - this.wlen);
+        }
+        this.wlen = newLen;
+        return this;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * This mutable bit set is modified in place and a reference to this is returned for method chaining.
+     */
     @Override
     public AbstractBitSet andNot(final AbstractBitSet other) {
-        return remove(other);
+        int idx = Math.min(wlen, other.wlen());
+        long[] thisArr = this.bits;
+        long[] otherArr = other.bits();
+        while (--idx >= 0) {
+            thisArr[idx] &= ~otherArr[idx];
+        }
+        return this;
     }
 
     /**
@@ -557,13 +562,12 @@ public class MutableBitSet extends AbstractBitSet/* implements Cloneable, Serial
     }
 
     /**
-     * Return the cardinality of <code>a and not b</code> or <code>intersection(1, not(b))</code> of the
-     * two specified mutable bit sets.  Neither set is modified.
+     * Return the cardinality of the logical NOT followed by AND of the two specified mutable bit sets.  Neither
+     * set is modified.
      *
-     * @param a first mutable bit set
-     * @param b second mutable bit set
-     * @return the cardinality of <code>a and not b</code> or <code>intersection(1, not(b))</code> of the
-     *    two specified mutable bit sets
+     * @param a first mutable bit set, must not be null
+     * @param b second mutable bit set, must not be null
+     * @return the cardinality of the logical NOT followed by AND of the two specified mutable bit sets
      */
     public static long andNotCount(final MutableBitSet a, final MutableBitSet b) {
         long tot = BitUtil.pop_andnot(a.bits, b.bits, 0, Math.min(a.wlen, b.wlen));
@@ -574,24 +578,24 @@ public class MutableBitSet extends AbstractBitSet/* implements Cloneable, Serial
     }
 
     /**
-     * Return the cardinality of the intersection of the two specified mutable bit sets.  Neither set is modified.
+     * Return the cardinality of the logical AND of the two specified mutable bit sets.  Neither set is modified.
      *
-     * @param a first mutable bit set
-     * @param b second mutable bit set
-     * @return the cardinality of the intersection of the two specified mutable bit sets
+     * @param a first mutable bit set, must not be null
+     * @param b second mutable bit set, must not be null
+     * @return the cardinality of the logical AND of the two specified mutable bit sets
      */
-    public static long intersectionCount(final MutableBitSet a, final MutableBitSet b) {
+    public static long andCount(final MutableBitSet a, final MutableBitSet b) {
         return BitUtil.pop_intersect(a.bits, b.bits, 0, Math.min(a.wlen, b.wlen));
     }
 
     /**
-     * Return the cardinality of the union of the two specified mutable bit sets.  Neither set is modified.
+     * Return the cardinality of the logical OR of the two specified mutable bit sets.  Neither set is modified.
      *
-     * @param a first mutable bit set
-     * @param b second mutable bit set
-     * @return the cardinality of the union of the two specified mutable bit sets
+     * @param a first mutable bit set, must not be null
+     * @param b second mutable bit set, must not be null
+     * @return the cardinality of the logical OR of the two specified mutable bit sets
      */
-    public static long unionCount(final MutableBitSet a, final MutableBitSet b) {
+    public static long orCount(final MutableBitSet a, final MutableBitSet b) {
         long tot = BitUtil.pop_union(a.bits, b.bits, 0, Math.min(a.wlen, b.wlen));
         if (a.wlen < b.wlen) {
             tot += BitUtil.pop_array(b.bits, a.wlen, b.wlen - a.wlen);
@@ -603,11 +607,11 @@ public class MutableBitSet extends AbstractBitSet/* implements Cloneable, Serial
     }
 
     /**
-     * Return the cardinality of the exclusive or of the two specified mutable bit sets.  Neither set is modified.
+     * Return the cardinality of the logical XOR of the two specified mutable bit sets.
      *
-     * @param a first mutable bit set
-     * @param b second mutable bit set
-     * @return the cardinality of the exclusive or of the two specified mutable bit sets
+     * @param a first mutable bit set, must not be null
+     * @param b second mutable bit set, must not be null
+     * @return the cardinality of the logical XOR of the two specified mutable bit sets
      */
     public static long xorCount(final MutableBitSet a, final MutableBitSet b) {
         long tot = BitUtil.pop_xor(a.bits, b.bits, 0, Math.min(a.wlen, b.wlen));

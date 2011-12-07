@@ -20,44 +20,242 @@ package org.apache.lucene.util;
  * Abstract bit set.
  */
 public abstract class AbstractBitSet {
-    protected abstract long[] bits();
-    protected abstract long numBits();
-    protected abstract int wlen();
 
-    public abstract long capacity(); // 1 greater than the index of the last (set?) bit
-    public abstract long cardinality(); // number of bits set to true
-    public abstract boolean isEmpty(); // cardinality == 0
+    /**
+     * Return the capacity of this bit set.
+     *
+     * @return the capacity of this bit set
+     */
+    public abstract long capacity(); // 1 greater than the index of the last bit
+
+    /**
+     * Return the cardinality of this bit set, that is the number of bits set to true.
+     *
+     * @return  the cardinality of this bit set, that is the number of bits set to true
+     */
+    public abstract long cardinality();
+
+    /**
+     * Return true if the cardinality of this bit set is zero.
+     *
+     * @return true if the cardinality of this bit set is zero
+     */
+    public abstract boolean isEmpty();
+
+    /**
+     * Return true if the bit at the specified index is set.
+     *
+     * @param index index
+     * @return true if the bit at the specified index is set
+     */
     public abstract boolean get(long index);
+
+    /**
+     * Return true if the bit at the specified index is set, without checking bounds.
+     *
+     * @param index index
+     * @return true if the bit at the specified index is set, without checking bounds
+     */
     public abstract boolean getQuick(long index);
+
+    /**
+     * Return the index of the next bit set to true on or after the specified index, or
+     * <code>-1</code> if no such bit exists.
+     *
+     * @param index index
+     * @return the index of the next bit set to true on or after the specified index, or
+     *    <code>-1</code> if no such bit exists
+     */
     public abstract long nextSetBit(long index);
+
+    /**
+     * Return the index of the previous bit set to true on or before the specified index, or
+     * <code>-1</code> if no such bit exists.
+     *
+     * @param index index
+     * @return the index of the previous bit set to true on or before the specified index, or
+     *    <code>-1</code> if no such bit exists
+     */
     public abstract long prevSetBit(long index);
+
+    /**
+     * Return true if the specified bit set has any bits set to true that are also set to true
+     * in this bit set.
+     *
+     * @param other bit set to compare, must not be null
+     * @return true if the specified bit set has any bits set to true that are also set to true
+     *    in this bit set
+     */
     public abstract boolean intersects(AbstractBitSet other);
     //public abstract void forEach(Procedure<Long> procedure);
 
-    // optional
+
+    // optional operations
+
+    /**
+     * Set the bit at the specified index in this bit set to true (optional operation).
+     *
+     * @param index index
+     * @throws UnsupportedOperationException if this operation is not supported by this bit set
+     */
     public abstract void set(long index);
+
+    /**
+     * Set the bits from the specified range <code>startIndex</code> (inclusive) to <code>endIndex</code> (exclusive)
+     * in this bit set to true (optional operation).
+     *
+     * @param startIndex start index
+     * @param endIndex end index
+     * @throws UnsupportedOperationException if this operation is not supported by this bit set
+     */
     public abstract void set(long startIndex, long endIndex);
+
+    /**
+     * Set the bit at the specified index in this bit set to true, without checking bounds (optional operation).
+     *
+     * @param index index
+     * @throws UnsupportedOperationException if this operation is not supported by this bit set
+     */
     public abstract void setQuick(long index);
+
+    /**
+     * Set the bit at the specified index in this bit set to false (optional operation).
+     *
+     * @param index index
+     * @throws UnsupportedOperationException if this operation is not supported by this bit set
+     */
     public abstract void clear(long index);
+
+    /**
+     * Set the bits from the specified range <code>startIndex</code> (inclusive) to <code>endIndex</code> (exclusive)
+     * in this bit set to false (optional operation).
+     *
+     * @param startIndex start index
+     * @param endIndex end index
+     * @throws UnsupportedOperationException if this operation is not supported by this bit set
+     */
     public abstract void clear(long startIndex, long endIndex);
+
+    /**
+     * Set the bit at the specified index in this bit set to false, without checking bounds (optional operation).
+     *
+     * @param index index
+     * @throws UnsupportedOperationException if this operation is not supported by this bit set
+     */
     public abstract void clearQuick(long index);
+
+    /**
+     * Set the bit at the specified index in this bit set to true and return its previous value (optional operation).
+     *
+     * @param index index
+     * @return  the previous value of the bit at the specified index
+     * @throws UnsupportedOperationException if this operation is not supported by this bit set
+     */
     public abstract boolean getAndSet(long index);
+
+    /**
+     * Set the bit at the specified index in this bit set to the compliment of its current value (optional operation).
+     *
+     * @param index index
+     * @throws UnsupportedOperationException if this operation is not supported by this bit set
+     */
     public abstract void flip(long index);
+
+    /**
+     * Set each bit from the specified range <code>startIndex</code> (inclusive) to <code>endIndex</code> (exclusive)
+     * in this bit set to the compliment of its current value (optional operation).
+     *
+     * @param startIndex start index
+     * @param endIndex end index
+     * @throws UnsupportedOperationException if this operation is not supported by this bit set
+     */
     public abstract void flip(long startIndex, long endIndex);
+
+    /**
+     * Set the bit at the specified index in this bit set to the compliment of its current value, without checking bounds (optional operation).
+     *
+     * @param index index
+     * @throws UnsupportedOperationException if this operation is not supported by this bit set
+     */
     public abstract void flipQuick(long index);
+
+    /**
+     * Set the bit at the specified index in this bit set to the complement of its current value and return its previous value (optional operation).
+     *
+     * @param index index
+     * @return  the previous value of the bit at the specified index
+     * @throws UnsupportedOperationException if this operation is not supported by this bit set
+     */
     public abstract boolean flipAndGet(long index);
+
+    /**
+     * Ensure capacity in this bit set for the specified number of bits (optional operation).
+     *
+     * @param numBits number of bits
+     * @throws UnsupportedOperationException if this operation is not supported by this bit set
+     */
     public abstract void ensureCapacity(long numBits);
+
+    /**
+     * Trim all trailing zeros from the <code>long[]</code> backing this bit set (optional operation).
+     */
     public abstract void trimTrailingZeros();
 
-    // may return this or a copy of this
-    // choose {intersect, union, remove} or the other {and, or, andNot}
-    public abstract AbstractBitSet intersect(AbstractBitSet other);
-    public abstract AbstractBitSet union(AbstractBitSet other);
-    public abstract AbstractBitSet remove(AbstractBitSet other);
+
+    // logical operations
+
+    /**
+     * Perform a logical XOR of the specified bit set and this bit set.
+     *
+     * @param other bit set to XOR with this bit set, must not be null
+     * @return this bit set or a copy of this bit set, for method chaining
+     */
     public abstract AbstractBitSet xor(AbstractBitSet other);
-    public abstract AbstractBitSet and(AbstractBitSet other); // just forwards to union
-    public abstract AbstractBitSet or(AbstractBitSet other); // just forwards to intersect
-    public abstract AbstractBitSet andNot(AbstractBitSet other); // just forwards to remove
+
+    /**
+     * Perform a logical AND of the specified bit set and this bit set.  Also known as an union operation.
+     *
+     * @param other bit set to AND with this bit set, must not be null
+     * @return this bit set or a copy of this bit set, for method chaining
+     */
+    public abstract AbstractBitSet and(AbstractBitSet other);
+
+    /**
+     * Perform a logical OR of the specified bit set and this bit set.  Also known as an intersect operation.
+     *
+     * @param other bit set to OR with this bit set, must not be null
+     * @return this bit set or a copy of this bit set, for method chaining
+     */
+    public abstract AbstractBitSet or(AbstractBitSet other);
+
+    /**
+     * Perform a logical NOT followed by AND of the specified bit set and this bit set.  Also known as a remove operation.
+     *
+     * @param other bit set to NOT followed by AND with this bit set, must not be null
+     * @return this bit set or a copy of this bit set, for method chaining
+     */
+    public abstract AbstractBitSet andNot(AbstractBitSet other);
+
+    /**
+     * Return the <code>long[]</code> backing this bit set.
+     *
+     * @return the <code>long[]</code> backing this bit set
+     */
+    protected abstract long[] bits();
+
+    /**
+     * Return the number of bits in this bit set.
+     *
+     * @return the number of bits in this bet set
+     */
+    protected abstract long numBits();
+
+    /**
+     * Return the number of words in <code>bits()</code> used for storage.
+     *
+     * @return the number of words in <code>bits()</code> used for storage
+     */
+    protected abstract int wlen();
 
     // from RamUsageEstimator.java
     private final static int NUM_BYTES_LONG = 8;

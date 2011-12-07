@@ -219,51 +219,11 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public AbstractBitSet intersect(final AbstractBitSet other) {
-        int newLen = Math.min(this.wlen, other.wlen());
-        long[] thisArr = this.bits.clone();
-        long[] otherArr = other.bits();
-        // testing against zero can be more efficient
-        int pos = newLen;
-        while (--pos >= 0) {
-            thisArr[pos] &= otherArr[pos];
-        }
-        // if (this.wlen > newLen) {
-        // fill zeros from the new shorter length to the old length
-        // Arrays.fill(bits,newLen,this.wlen,0);
-        // }
-        //this.wlen = newLen;
-        return new ImmutableBitSet(thisArr, newLen * 64, newLen);
-    }
-
-    @Override
-    public AbstractBitSet union(final AbstractBitSet other) {
-        int newLen = Math.max(wlen, other.wlen());
-        long[] thisArr = this.bits.clone();
-        long[] otherArr = other.bits();
-        int pos = Math.min(wlen, other.wlen());
-        while (--pos >= 0) {
-            thisArr[pos] |= otherArr[pos];
-        }
-        if (this.wlen < newLen) {
-            thisArr = grow(thisArr, newLen);
-            System.arraycopy(otherArr, this.wlen, thisArr, this.wlen, newLen - this.wlen);
-        }
-        return new ImmutableBitSet(thisArr, newLen * 64, newLen);
-    }
-
-    @Override
-    public AbstractBitSet remove(final AbstractBitSet other) {
-        int idx = Math.min(wlen, other.wlen());
-        long[] thisArr = this.bits.clone();
-        long[] otherArr = other.bits();
-        while (--idx >= 0) {
-            thisArr[idx] &= ~otherArr[idx];
-        }
-        return new ImmutableBitSet(thisArr, wlen * 64, wlen);
-    }
-
+    /**
+     * {@inheritDoc}
+     *
+     * A reference to a copy of this immutable bit set is returned for method chaining.
+     */
     @Override
     public AbstractBitSet xor(final AbstractBitSet other) {
         int newLen = Math.max(wlen, other.wlen());
@@ -280,19 +240,64 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
         return new ImmutableBitSet(thisArr, newLen * 64, newLen);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * A reference to a copy of this immutable bit set is returned for method chaining.
+     */
     @Override
     public AbstractBitSet and(final AbstractBitSet other) {
-        return intersect(other);
+        int newLen = Math.min(this.wlen, other.wlen());
+        long[] thisArr = this.bits.clone();
+        long[] otherArr = other.bits();
+        // testing against zero can be more efficient
+        int pos = newLen;
+        while (--pos >= 0) {
+            thisArr[pos] &= otherArr[pos];
+        }
+        // if (this.wlen > newLen) {
+        // fill zeros from the new shorter length to the old length
+        // Arrays.fill(bits,newLen,this.wlen,0);
+        // }
+        //this.wlen = newLen;
+        return new ImmutableBitSet(thisArr, newLen * 64, newLen);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * A reference to a copy of this immutable bit set is returned for method chaining.
+     */
     @Override
     public AbstractBitSet or(final AbstractBitSet other) {
-        return union(other);
+        int newLen = Math.max(wlen, other.wlen());
+        long[] thisArr = this.bits.clone();
+        long[] otherArr = other.bits();
+        int pos = Math.min(wlen, other.wlen());
+        while (--pos >= 0) {
+            thisArr[pos] |= otherArr[pos];
+        }
+        if (this.wlen < newLen) {
+            thisArr = grow(thisArr, newLen);
+            System.arraycopy(otherArr, this.wlen, thisArr, this.wlen, newLen - this.wlen);
+        }
+        return new ImmutableBitSet(thisArr, newLen * 64, newLen);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * A reference to a copy of this immutable bit set is returned for method chaining.
+     */
     @Override
     public AbstractBitSet andNot(final AbstractBitSet other) {
-        return remove(other);
+        int idx = Math.min(wlen, other.wlen());
+        long[] thisArr = this.bits.clone();
+        long[] otherArr = other.bits();
+        while (--idx >= 0) {
+            thisArr[idx] &= ~otherArr[idx];
+        }
+        return new ImmutableBitSet(thisArr, wlen * 64, wlen);
     }
 
     /**
@@ -388,13 +393,11 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
     }
 
     /**
-     * Return the cardinality of <code>a and not b</code> or <code>intersection(1, not(b))</code> of the
-     * two specified immutable bit sets.
+     * Return the cardinality of the logical NOT followed by AND of the two specified immutable bit sets.
      *
-     * @param a first immutable bit set
-     * @param b second immutable bit set
-     * @return the cardinality of <code>a and not b</code> or <code>intersection(1, not(b))</code> of the 
-     *    two specified immutable bit sets
+     * @param a first immutable bit set, must not be null
+     * @param b second immutable bit set, must not be null
+     * @return the cardinality of the logical NOT followed by AND of the two specified immutable bit sets
      */
     public static long andNotCount(final ImmutableBitSet a, final ImmutableBitSet b) {
         long tot = BitUtil.pop_andnot(a.bits, b.bits, 0, Math.min(a.wlen, b.wlen));
@@ -405,24 +408,24 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
     }
 
     /**
-     * Return the cardinality of the intersection of the two specified immutable bit sets.
+     * Return the cardinality of the logical AND of the two specified immutable bit sets.
      *
-     * @param a first immutable bit set
-     * @param b second immutable bit set
-     * @return the cardinality of the intersection of the two specified immutable bit sets
+     * @param a first immutable bit set, must not be null
+     * @param b second immutable bit set, must not be null
+     * @return the cardinality of the logical AND of the two specified immutable bit sets
      */
-    public static long intersectionCount(final ImmutableBitSet a, final ImmutableBitSet b) {
+    public static long andCount(final ImmutableBitSet a, final ImmutableBitSet b) {
         return BitUtil.pop_intersect(a.bits, b.bits, 0, Math.min(a.wlen, b.wlen));
     }
 
     /**
-     * Return the cardinality of the union of the two specified immutable bit sets.
+     * Return the cardinality of the logical OR of the two specified immutable bit sets.
      *
-     * @param a first immutable bit set
-     * @param b second immutable bit set
-     * @return the cardinality of the union of the two specified immutable bit sets
+     * @param a first immutable bit set, must not be null
+     * @param b second immutable bit set, must not be null
+     * @return the cardinality of the logical OR of the two specified immutable bit sets
      */
-    public static long unionCount(final ImmutableBitSet a, final ImmutableBitSet b) {
+    public static long orCount(final ImmutableBitSet a, final ImmutableBitSet b) {
         long tot = BitUtil.pop_union(a.bits, b.bits, 0, Math.min(a.wlen, b.wlen));
         if (a.wlen < b.wlen) {
             tot += BitUtil.pop_array(b.bits, a.wlen, b.wlen - a.wlen);
@@ -434,11 +437,11 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
     }
 
     /**
-     * Return the cardinality of the exclusive or of the two specified immutable bit sets.
+     * Return the cardinality of the logical XOR of the two specified immutable bit sets.
      *
-     * @param a first immutable bit set
-     * @param b second immutable bit set
-     * @return the cardinality of the exclusive or of the two specified immutable bit sets
+     * @param a first immutable bit set, must not be null
+     * @param b second immutable bit set, must not be null
+     * @return the cardinality of the logical XOR of the two specified immutable bit sets
      */
     public static long xorCount(final ImmutableBitSet a, final ImmutableBitSet b) {
         long tot = BitUtil.pop_xor(a.bits, b.bits, 0, Math.min(a.wlen, b.wlen));
