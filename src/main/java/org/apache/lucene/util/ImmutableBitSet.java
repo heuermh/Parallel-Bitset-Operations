@@ -335,20 +335,16 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
     @Override
     public AbstractBitSet union(final AbstractBitSet other) {
         int newLen = Math.max(wlen, other.wlen());
-        // ensureCapacityWords(newLen);
-        // assert (numBits = Math.max(other.numBits, numBits)) >= 0;
-
         long[] thisArr = this.bits.clone();
         long[] otherArr = other.bits();
         int pos = Math.min(wlen, other.wlen());
         while (--pos >= 0) {
             thisArr[pos] |= otherArr[pos];
         }
-        // if (this.wlen < newLen) {
-        // System.arraycopy(otherArr, this.wlen, thisArr, this.wlen,
-        // newLen-this.wlen);
-        // }
-        // this.wlen = newLen;
+        if (this.wlen < newLen) {
+            thisArr = grow(thisArr, newLen);
+            System.arraycopy(otherArr, this.wlen, thisArr, this.wlen, newLen - this.wlen);
+        }
         return new ImmutableBitSet(thisArr, newLen * 64, newLen);
     }
 
@@ -364,20 +360,16 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
     @Override
     public AbstractBitSet xor(final AbstractBitSet other) {
         int newLen = Math.max(wlen, other.wlen());
-        // ensureCapacityWords(newLen);
-        // assert (numBits = Math.max(other.numBits, numBits)) >= 0;
-
         long[] thisArr = this.bits.clone();
         long[] otherArr = other.bits();
         int pos = Math.min(wlen, other.wlen());
         while (--pos >= 0) {
             thisArr[pos] ^= otherArr[pos];
         }
-        // if (this.wlen < newLen) {
-        // System.arraycopy(otherArr, this.wlen, thisArr, this.wlen,
-        // newLen-this.wlen);
-        // }
-        // this.wlen = newLen;
+        if (this.wlen < newLen) {
+            thisArr = grow(thisArr, newLen);
+            System.arraycopy(otherArr, this.wlen, thisArr, this.wlen, newLen - this.wlen);
+        }
         return new ImmutableBitSet(thisArr, newLen * 64, newLen);
     }
 
