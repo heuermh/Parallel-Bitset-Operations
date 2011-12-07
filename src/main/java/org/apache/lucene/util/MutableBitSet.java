@@ -75,17 +75,6 @@ public class MutableBitSet extends AbstractBitSet/* implements Cloneable, Serial
     }
 
 
-    // reorder methods to match AbstractBitSet
-    @Override
-    public AbstractBitSet and(final AbstractBitSet other) {
-        return intersect(other);
-    }
-
-    @Override
-    public AbstractBitSet andNot(final AbstractBitSet other) {
-        return remove(other);
-    }
-
     @Override
     public long capacity() {
         return bits.length << 6;
@@ -94,6 +83,142 @@ public class MutableBitSet extends AbstractBitSet/* implements Cloneable, Serial
     @Override
     public long cardinality() {
         return BitUtil.pop_array(bits, 0, wlen);
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return cardinality() == 0;
+    }
+
+    @Override
+    public boolean get(final long index) {
+        int i = (int) (index >> 6); // div 64
+        if (i >= bits.length) {
+            return false;
+        }
+        int bit = (int) index & 0x3f; // mod 64
+        long bitmask = 1L << bit;
+        return (bits[i] & bitmask) != 0;
+    }
+
+    @Override
+    public boolean getQuick(final long index) {
+        assert index >= 0 && index < numBits;
+        int i = (int) (index >> 6); // div 64
+        int bit = (int) index & 0x3f; // mod 64
+        long bitmask = 1L << bit;
+        return (bits[i] & bitmask) != 0;
+    }
+
+    @Override
+    public long nextSetBit(final long index) {
+        int i = (int) (index >>> 6);
+        if (i >= wlen) {
+            return -1;
+        }
+        int subIndex = (int) index & 0x3f; // index within the word
+        long word = bits[i] >>> subIndex; // skip all the bits to the right of index
+
+        if (word != 0) {
+            return (((long) i) << 6) + (subIndex + BitUtil.ntz(word));
+        }
+
+        while (++i < wlen) {
+            word = bits[i];
+            if (word != 0) {
+                return (((long) i) << 6) + BitUtil.ntz(word);
+            }
+        }
+        return -1;
+    }
+
+    @Override
+    public long prevSetBit(final long index) {
+        int i = (int) (index >> 6);
+        final int subIndex;
+        long word;
+        if (i >= wlen) {
+            i = wlen - 1;
+            if (i < 0) {
+                return -1;
+            }
+            subIndex = 63; // last possible bit
+            word = bits[i];
+        } else {
+            if (i < 0) {
+                return -1;
+            }
+            subIndex = (int) index & 0x3f; // index within the word
+            word = (bits[i] << (63 - subIndex)); // skip all the bits to the left of index
+        }
+
+        if (word != 0) {
+            return (((long) i) << 6) + subIndex - Long.numberOfLeadingZeros(word); // See LUCENE-3197
+        }
+
+        while (--i >= 0) {
+            word = bits[i];
+            if (word != 0) {
+                return (((long) i) << 6) + 63 - Long.numberOfLeadingZeros(word);
+            }
+        }
+        return -1;
+    }
+
+    @Override
+    public boolean intersects(final AbstractBitSet other) {
+        int pos = Math.min(this.wlen, other.wlen());
+        long[] thisArr = this.bits;
+        long[] otherArr = other.bits();
+        while (--pos >= 0) {
+            if ((thisArr[pos] & otherArr[pos]) != 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public void set(final long index) {
+        int wordNum = expandingWordNum(index);
+        int bit = (int) index & 0x3f;
+        long bitmask = 1L << bit;
+        bits[wordNum] |= bitmask;
+    }
+
+    @Override
+    public void set(final long startIndex, final long endIndex) {
+        if (endIndex <= startIndex) {
+            return;
+        }
+
+        int startWord = (int) (startIndex >> 6);
+
+        // since endIndex is one past the end, this is index of the last
+        // word to be changed.
+        int endWord = expandingWordNum(endIndex - 1);
+
+        long startmask = -1L << startIndex;
+        long endmask = -1L >>> -endIndex; // 64-(endIndex&0x3f) is the same as
+                                          // -endIndex due to wrap
+
+        if (startWord == endWord) {
+            bits[startWord] |= (startmask & endmask);
+            return;
+        }
+
+        bits[startWord] |= startmask;
+        Arrays.fill(bits, startWord + 1, endWord, -1L);
+        bits[endWord] |= endmask;
+    }
+
+    @Override
+    public void setQuick(final long index) {
+        assert index >= 0 && index < numBits;
+        int wordNum = (int) (index >> 6);
+        int bit = (int) index & 0x3f;
+        long bitmask = 1L << bit;
+        bits[wordNum] |= bitmask;
     }
 
     @Override
@@ -145,51 +270,6 @@ public class MutableBitSet extends AbstractBitSet/* implements Cloneable, Serial
     }
 
     @Override
-    public void ensureCapacity(final long numBits) {
-        ensureCapacityWords(bits2words(numBits));
-    }
-
-    private void ensureCapacityWords(final int numWords) {
-         if (bits.length < numWords) {
-            bits = grow(bits, numWords);
-        }
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof MutableBitSet)) {
-            return false;
-        }
-        MutableBitSet a;
-        MutableBitSet b = (MutableBitSet) o;
-        // make a the larger set.
-        if (b.wlen > this.wlen) {
-            a = b;
-            b = this;
-        }
-        else {
-            a = this;
-        }
-
-        // check for any set bits out of the range of b
-        for (int i = a.wlen - 1; i >= b.wlen; i--) {
-            if (a.bits[i] != 0) {
-                return false;
-            }
-        }
-
-        for (int i = b.wlen - 1; i >= 0; i--) {
-            if (a.bits[i] != b.bits[i]) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    @Override
     public void clearQuick(final long index) {
         assert index >= 0 && index < numBits;
         int wordNum = (int) (index >> 6); // div 64
@@ -199,30 +279,14 @@ public class MutableBitSet extends AbstractBitSet/* implements Cloneable, Serial
     }
 
     @Override
-    public void flipQuick(final long index) {
+    public boolean getAndSet(final long index) {
         assert index >= 0 && index < numBits;
         int wordNum = (int) (index >> 6); // div 64
         int bit = (int) index & 0x3f; // mod 64
         long bitmask = 1L << bit;
-        bits[wordNum] ^= bitmask;
-    }
-
-    @Override
-    public boolean getQuick(final long index) {
-        assert index >= 0 && index < numBits;
-        int i = (int) (index >> 6); // div 64
-        int bit = (int) index & 0x3f; // mod 64
-        long bitmask = 1L << bit;
-        return (bits[i] & bitmask) != 0;
-    }
-
-    @Override
-    public void setQuick(final long index) {
-        assert index >= 0 && index < numBits;
-        int wordNum = (int) (index >> 6);
-        int bit = (int) index & 0x3f;
-        long bitmask = 1L << bit;
+        boolean val = (bits[wordNum] & bitmask) != 0;
         bits[wordNum] |= bitmask;
+        return val;
     }
 
     @Override
@@ -271,6 +335,15 @@ public class MutableBitSet extends AbstractBitSet/* implements Cloneable, Serial
     }
 
     @Override
+    public void flipQuick(final long index) {
+        assert index >= 0 && index < numBits;
+        int wordNum = (int) (index >> 6); // div 64
+        int bit = (int) index & 0x3f; // mod 64
+        long bitmask = 1L << bit;
+        bits[wordNum] ^= bitmask;
+    }
+
+    @Override
     public boolean flipAndGet(final long index) {
         assert index >= 0 && index < numBits;
         int wordNum = (int) (index >> 6); // div 64
@@ -281,63 +354,17 @@ public class MutableBitSet extends AbstractBitSet/* implements Cloneable, Serial
     }
 
     @Override
-    public boolean get(final long index) {
-        int i = (int) (index >> 6); // div 64
-        if (i >= bits.length) {
-            return false;
+    public void ensureCapacity(final long numBits) {
+        ensureCapacityWords(bits2words(numBits));
+    }
+
+    @Override
+    public void trimTrailingZeros() {
+        int idx = wlen - 1;
+        while (idx >= 0 && bits[idx] == 0) {
+            idx--;
         }
-        int bit = (int) index & 0x3f; // mod 64
-        long bitmask = 1L << bit;
-        return (bits[i] & bitmask) != 0;
-    }
-
-    @Override
-    public boolean getAndSet(final long index) {
-        assert index >= 0 && index < numBits;
-        int wordNum = (int) (index >> 6); // div 64
-        int bit = (int) index & 0x3f; // mod 64
-        long bitmask = 1L << bit;
-        boolean val = (bits[wordNum] & bitmask) != 0;
-        bits[wordNum] |= bitmask;
-        return val;
-    }
-
-    /* no long version, unfortunately
-    @Override
-    public int getBit(final int index) {
-        assert index >= 0 && index < numBits;
-        int i = index >> 6; // div 64
-        int bit = index & 0x3f; // mod 64
-        return ((int) (bits[i] >>> bit)) & 0x01;
-    }
-    */
-
-    /** Expert: gets the number of longs in the array that are in use */
-    public int getNumWords() {
-        return wlen;
-    }
-
-    @Override
-    public int hashCode() {
-        // Start with a zero hash and use a mix that results in zero if the input is zero.
-        // This effectively truncates trailing zeros without an explicit check.
-        long h = 0;
-        for (int i = bits.length; --i >= 0;) {
-            h ^= bits[i];
-            h = (h << 1) | (h >>> 63); // rotate left
-        }
-        // fold leftmost bits into right and add a constant to prevent
-        // empty sets from returning 0, which is too common.
-        return (int) ((h >> 32) ^ h) + 0x98761234;
-    }
-
-    /**
-     * Return a new immutable copy of this mutable bit set.
-     *
-     * @return a new immutable copy of this mutable bit set
-     */
-    public ImmutableBitSet immutableCopy() {
-        return new ImmutableBitSet(bits, wlen); // bits is cloned in ctr
+        wlen = idx + 1;
     }
 
     @Override
@@ -359,143 +386,6 @@ public class MutableBitSet extends AbstractBitSet/* implements Cloneable, Serial
     }
 
     @Override
-    public boolean intersects(final AbstractBitSet other) {
-        int pos = Math.min(this.wlen, other.wlen());
-        long[] thisArr = this.bits;
-        long[] otherArr = other.bits();
-        while (--pos >= 0) {
-            if ((thisArr[pos] & otherArr[pos]) != 0) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return cardinality() == 0;
-    }
-
-    @Override
-    public long nextSetBit(final long index) {
-        int i = (int) (index >>> 6);
-        if (i >= wlen) {
-            return -1;
-        }
-        int subIndex = (int) index & 0x3f; // index within the word
-        long word = bits[i] >>> subIndex; // skip all the bits to the right of index
-
-        if (word != 0) {
-            return (((long) i) << 6) + (subIndex + BitUtil.ntz(word));
-        }
-
-        while (++i < wlen) {
-            word = bits[i];
-            if (word != 0) {
-                return (((long) i) << 6) + BitUtil.ntz(word);
-            }
-        }
-        return -1;
-    }
-
-    @Override
-    public AbstractBitSet or(final AbstractBitSet other) {
-        return union(other);
-    }
-
-    @Override
-    public long prevSetBit(final long index) {
-        int i = (int) (index >> 6);
-        final int subIndex;
-        long word;
-        if (i >= wlen) {
-            i = wlen - 1;
-            if (i < 0) {
-                return -1;
-            }
-            subIndex = 63; // last possible bit
-            word = bits[i];
-        } else {
-            if (i < 0) {
-                return -1;
-            }
-            subIndex = (int) index & 0x3f; // index within the word
-            word = (bits[i] << (63 - subIndex)); // skip all the bits to the left of index
-        }
-
-        if (word != 0) {
-            return (((long) i) << 6) + subIndex - Long.numberOfLeadingZeros(word); // See LUCENE-3197
-        }
-
-        while (--i >= 0) {
-            word = bits[i];
-            if (word != 0) {
-                return (((long) i) << 6) + 63 - Long.numberOfLeadingZeros(word);
-            }
-        }
-        return -1;
-    }
-
-    @Override
-    public AbstractBitSet remove(final AbstractBitSet other) {
-        int idx = Math.min(wlen, other.wlen());
-        long[] thisArr = this.bits;
-        long[] otherArr = other.bits();
-        while (--idx >= 0) {
-            thisArr[idx] &= ~otherArr[idx];
-        }
-        return this;
-    }
-
-    @Override
-    public void set(final long index) {
-        int wordNum = expandingWordNum(index);
-        int bit = (int) index & 0x3f;
-        long bitmask = 1L << bit;
-        bits[wordNum] |= bitmask;
-    }
-
-    @Override
-    public void set(final long startIndex, final long endIndex) {
-        if (endIndex <= startIndex) {
-            return;
-        }
-
-        int startWord = (int) (startIndex >> 6);
-
-        // since endIndex is one past the end, this is index of the last
-        // word to be changed.
-        int endWord = expandingWordNum(endIndex - 1);
-
-        long startmask = -1L << startIndex;
-        long endmask = -1L >>> -endIndex; // 64-(endIndex&0x3f) is the same as
-                                          // -endIndex due to wrap
-
-        if (startWord == endWord) {
-            bits[startWord] |= (startmask & endmask);
-            return;
-        }
-
-        bits[startWord] |= startmask;
-        Arrays.fill(bits, startWord + 1, endWord, -1L);
-        bits[endWord] |= endmask;
-    }
-
-    /** Expert: sets the number of longs in the array that are in use */
-    public void setNumWords(int nWords) {
-        this.wlen = nWords;
-    }
-
-    @Override
-    public void trimTrailingZeros() {
-        int idx = wlen - 1;
-        while (idx >= 0 && bits[idx] == 0) {
-            idx--;
-        }
-        wlen = idx + 1;
-    }
-
-    @Override
     public AbstractBitSet union(final AbstractBitSet other) {
         int newLen = Math.max(wlen, other.wlen());
         ensureCapacityWords(newLen);
@@ -514,13 +404,15 @@ public class MutableBitSet extends AbstractBitSet/* implements Cloneable, Serial
         return this;
     }
 
-    /**
-     * Return a new unsafe copy of this mutable bit set.
-     *
-     * @return a new unsafe copy of this mutable bit set
-     */
-    public UnsafeBitSet unsafeCopy() {
-        return new UnsafeBitSet(bits.clone(), wlen);
+    @Override
+    public AbstractBitSet remove(final AbstractBitSet other) {
+        int idx = Math.min(wlen, other.wlen());
+        long[] thisArr = this.bits;
+        long[] otherArr = other.bits();
+        while (--idx >= 0) {
+            thisArr[idx] &= ~otherArr[idx];
+        }
+        return this;
     }
 
     @Override
@@ -543,6 +435,97 @@ public class MutableBitSet extends AbstractBitSet/* implements Cloneable, Serial
     }
 
     @Override
+    public AbstractBitSet and(final AbstractBitSet other) {
+        return intersect(other);
+    }
+
+    @Override
+    public AbstractBitSet or(final AbstractBitSet other) {
+        return union(other);
+    }
+
+    @Override
+    public AbstractBitSet andNot(final AbstractBitSet other) {
+        return remove(other);
+    }
+
+    /**
+     * Return a new immutable copy of this mutable bit set.
+     *
+     * @return a new immutable copy of this mutable bit set
+     */
+    public ImmutableBitSet immutableCopy() {
+        return new ImmutableBitSet(bits, wlen); // bits is cloned in ctr
+    }
+
+    /**
+     * Return a new unsafe copy of this mutable bit set.
+     *
+     * @return a new unsafe copy of this mutable bit set
+     */
+    public UnsafeBitSet unsafeCopy() {
+        return new UnsafeBitSet(bits.clone(), wlen);
+    }
+
+    /* no long version, unfortunately
+    @Override
+    public int getBit(final int index) {
+        assert index >= 0 && index < numBits;
+        int i = index >> 6; // div 64
+        int bit = index & 0x3f; // mod 64
+        return ((int) (bits[i] >>> bit)) & 0x01;
+    }
+    */
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof MutableBitSet)) {
+            return false;
+        }
+        MutableBitSet a;
+        MutableBitSet b = (MutableBitSet) o;
+        // make a the larger set.
+        if (b.wlen > this.wlen) {
+            a = b;
+            b = this;
+        }
+        else {
+            a = this;
+        }
+
+        // check for any set bits out of the range of b
+        for (int i = a.wlen - 1; i >= b.wlen; i--) {
+            if (a.bits[i] != 0) {
+                return false;
+            }
+        }
+
+        for (int i = b.wlen - 1; i >= 0; i--) {
+            if (a.bits[i] != b.bits[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        // Start with a zero hash and use a mix that results in zero if the input is zero.
+        // This effectively truncates trailing zeros without an explicit check.
+        long h = 0;
+        for (int i = bits.length; --i >= 0;) {
+            h ^= bits[i];
+            h = (h << 1) | (h >>> 63); // rotate left
+        }
+        // fold leftmost bits into right and add a constant to prevent
+        // empty sets from returning 0, which is too common.
+        return (int) ((h >> 32) ^ h) + 0x98761234;
+    }
+
+    @Override
     protected long[] bits() {
         return bits;
     }
@@ -556,6 +539,12 @@ public class MutableBitSet extends AbstractBitSet/* implements Cloneable, Serial
     protected int wlen() {
         return wlen;
     }
+
+    private void ensureCapacityWords(final int numWords) {
+        if (bits.length < numWords) {
+           bits = grow(bits, numWords);
+       }
+   }
 
     private int expandingWordNum(final long index) {
         int wordNum = (int) (index >> 6);

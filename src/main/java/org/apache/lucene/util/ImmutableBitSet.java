@@ -50,17 +50,6 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
     }
 
 
-    // reorder methods to match AbstractBitSet
-    @Override
-    public AbstractBitSet and(final AbstractBitSet other) {
-        return intersect(other);
-    }
-
-    @Override
-    public AbstractBitSet andNot(final AbstractBitSet other) {
-        return remove(other);
-    }
-
     @Override
     public long capacity() {
         return bits.length << 6;
@@ -72,92 +61,8 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
     }
 
     @Override
-    public void clear(final long index) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void clear(final long startIndex, final long endIndex) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void ensureCapacity(final long numBits) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof ImmutableBitSet)) {
-            return false;
-        }
-        ImmutableBitSet a;
-        ImmutableBitSet b = (ImmutableBitSet) o;
-        // make a the larger set.
-        if (b.wlen > this.wlen) {
-            a = b;
-            b = this;
-        }
-        else {
-            a = this;
-        }
-
-        // check for any set bits out of the range of b
-        for (int i = a.wlen - 1; i >= b.wlen; i--) {
-            if (a.bits[i] != 0) {
-                return false;
-            }
-        }
-
-        for (int i = b.wlen - 1; i >= 0; i--) {
-            if (a.bits[i] != b.bits[i]) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    @Override
-    public void clearQuick(final long index) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void flipQuick(final long index) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean getQuick(final long index) {
-        assert index >= 0 && index < numBits;
-        int i = (int) (index >> 6); // div 64
-        int bit = (int) index & 0x3f; // mod 64
-        long bitmask = 1L << bit;
-        return (bits[i] & bitmask) != 0;
-    }
-
-    @Override
-    public void setQuick(final long index) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void flip(final long index) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void flip(final long startIndex, final long endIndex) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean flipAndGet(final long index) {
-        throw new UnsupportedOperationException();
+    public boolean isEmpty() {
+        return cardinality() == 0;
     }
 
     @Override
@@ -172,77 +77,12 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
     }
 
     @Override
-    public boolean getAndSet(final long index) {
-        throw new UnsupportedOperationException();
-    }
-
-    /* no long version, unfortunately
-    @Override
-    public int getBit(final int index) {
+    public boolean getQuick(final long index) {
         assert index >= 0 && index < numBits;
-        int i = index >> 6; // div 64
-        int bit = index & 0x3f; // mod 64
-        return ((int) (bits[i] >>> bit)) & 0x01;
-    }
-    */
-
-    @Override
-    public int hashCode() {
-        // Start with a zero hash and use a mix that results in zero if the input is zero.
-        // This effectively truncates trailing zeros without an explicit check.
-        long h = 0;
-        for (int i = bits.length; --i >= 0;) {
-            h ^= bits[i];
-            h = (h << 1) | (h >>> 63); // rotate left
-        }
-        // fold leftmost bits into right and add a constant to prevent
-        // empty sets from returning 0, which is too common.
-        return (int) ((h >> 32) ^ h) + 0x98761234;
-    }
-
-    @Override
-    public AbstractBitSet intersect(final AbstractBitSet other) {
-        int newLen = Math.min(this.wlen, other.wlen());
-        long[] thisArr = this.bits.clone();
-        long[] otherArr = other.bits();
-        // testing against zero can be more efficient
-        int pos = newLen;
-        while (--pos >= 0) {
-            thisArr[pos] &= otherArr[pos];
-        }
-        // if (this.wlen > newLen) {
-        // fill zeros from the new shorter length to the old length
-        // Arrays.fill(bits,newLen,this.wlen,0);
-        // }
-        //this.wlen = newLen;
-        return new ImmutableBitSet(thisArr, newLen * 64, newLen);
-    }
-
-    @Override
-    public boolean intersects(final AbstractBitSet other) {
-        int pos = Math.min(this.wlen, other.wlen());
-        long[] thisArr = this.bits;
-        long[] otherArr = other.bits();
-        while (--pos >= 0) {
-            if ((thisArr[pos] & otherArr[pos]) != 0) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return cardinality() == 0;
-    }
-
-    /**
-     * Return a new mutable copy of this immutable bit set.
-     *
-     * @return a new mutable copy of this immutable bit set
-     */
-    public MutableBitSet mutableCopy() {
-        return new MutableBitSet(bits, wlen); // bits is cloned in ctr
+        int i = (int) (index >> 6); // div 64
+        int bit = (int) index & 0x3f; // mod 64
+        long bitmask = 1L << bit;
+        return (bits[i] & bitmask) != 0;
     }
 
     @Override
@@ -265,11 +105,6 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
             }
         }
         return -1;
-    }
-
-    @Override
-    public AbstractBitSet or(final AbstractBitSet other) {
-        return union(other);
     }
 
     @Override
@@ -307,14 +142,16 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
     }
 
     @Override
-    public AbstractBitSet remove(final AbstractBitSet other) {
-        int idx = Math.min(wlen, other.wlen());
-        long[] thisArr = this.bits.clone();
+    public boolean intersects(final AbstractBitSet other) {
+        int pos = Math.min(this.wlen, other.wlen());
+        long[] thisArr = this.bits;
         long[] otherArr = other.bits();
-        while (--idx >= 0) {
-            thisArr[idx] &= ~otherArr[idx];
+        while (--pos >= 0) {
+            if ((thisArr[pos] & otherArr[pos]) != 0) {
+                return true;
+            }
         }
-        return new ImmutableBitSet(thisArr, wlen * 64, wlen);
+        return false;
     }
 
     @Override
@@ -328,8 +165,76 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
     }
 
     @Override
+    public void setQuick(final long index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void clear(final long index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void clear(final long startIndex, final long endIndex) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void clearQuick(final long index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean getAndSet(final long index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void flip(final long index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void flip(final long startIndex, final long endIndex) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void flipQuick(final long index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean flipAndGet(final long index) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void ensureCapacity(final long numBits) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void trimTrailingZeros() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public AbstractBitSet intersect(final AbstractBitSet other) {
+        int newLen = Math.min(this.wlen, other.wlen());
+        long[] thisArr = this.bits.clone();
+        long[] otherArr = other.bits();
+        // testing against zero can be more efficient
+        int pos = newLen;
+        while (--pos >= 0) {
+            thisArr[pos] &= otherArr[pos];
+        }
+        // if (this.wlen > newLen) {
+        // fill zeros from the new shorter length to the old length
+        // Arrays.fill(bits,newLen,this.wlen,0);
+        // }
+        //this.wlen = newLen;
+        return new ImmutableBitSet(thisArr, newLen * 64, newLen);
     }
 
     @Override
@@ -348,13 +253,15 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
         return new ImmutableBitSet(thisArr, newLen * 64, newLen);
     }
 
-    /**
-     * Return a new unsafe copy of this immutable bit set.
-     *
-     * @return a new unsafe copy of this immutable bit set
-     */
-    public UnsafeBitSet unsafeCopy() {
-        return new UnsafeBitSet(bits.clone(), wlen);
+    @Override
+    public AbstractBitSet remove(final AbstractBitSet other) {
+        int idx = Math.min(wlen, other.wlen());
+        long[] thisArr = this.bits.clone();
+        long[] otherArr = other.bits();
+        while (--idx >= 0) {
+            thisArr[idx] &= ~otherArr[idx];
+        }
+        return new ImmutableBitSet(thisArr, wlen * 64, wlen);
     }
 
     @Override
@@ -371,6 +278,98 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
             System.arraycopy(otherArr, this.wlen, thisArr, this.wlen, newLen - this.wlen);
         }
         return new ImmutableBitSet(thisArr, newLen * 64, newLen);
+    }
+
+    @Override
+    public AbstractBitSet and(final AbstractBitSet other) {
+        return intersect(other);
+    }
+
+    @Override
+    public AbstractBitSet or(final AbstractBitSet other) {
+        return union(other);
+    }
+
+    @Override
+    public AbstractBitSet andNot(final AbstractBitSet other) {
+        return remove(other);
+    }
+
+    /**
+     * Return a new mutable copy of this immutable bit set.
+     *
+     * @return a new mutable copy of this immutable bit set
+     */
+    public MutableBitSet mutableCopy() {
+        return new MutableBitSet(bits, wlen); // bits is cloned in ctr
+    }
+
+    /**
+     * Return a new unsafe copy of this immutable bit set.
+     *
+     * @return a new unsafe copy of this immutable bit set
+     */
+    public UnsafeBitSet unsafeCopy() {
+        return new UnsafeBitSet(bits.clone(), wlen);
+    }
+
+    /* no long version, unfortunately
+    @Override
+    public int getBit(final int index) {
+        assert index >= 0 && index < numBits;
+        int i = index >> 6; // div 64
+        int bit = index & 0x3f; // mod 64
+        return ((int) (bits[i] >>> bit)) & 0x01;
+    }
+    */
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ImmutableBitSet)) {
+            return false;
+        }
+        ImmutableBitSet a;
+        ImmutableBitSet b = (ImmutableBitSet) o;
+        // make a the larger set.
+        if (b.wlen > this.wlen) {
+            a = b;
+            b = this;
+        }
+        else {
+            a = this;
+        }
+
+        // check for any set bits out of the range of b
+        for (int i = a.wlen - 1; i >= b.wlen; i--) {
+            if (a.bits[i] != 0) {
+                return false;
+            }
+        }
+
+        for (int i = b.wlen - 1; i >= 0; i--) {
+            if (a.bits[i] != b.bits[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        // Start with a zero hash and use a mix that results in zero if the input is zero.
+        // This effectively truncates trailing zeros without an explicit check.
+        long h = 0;
+        for (int i = bits.length; --i >= 0;) {
+            h ^= bits[i];
+            h = (h << 1) | (h >>> 63); // rotate left
+        }
+        // fold leftmost bits into right and add a constant to prevent
+        // empty sets from returning 0, which is too common.
+        return (int) ((h >> 32) ^ h) + 0x98761234;
     }
 
     @Override
