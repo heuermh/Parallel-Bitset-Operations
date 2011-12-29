@@ -17,12 +17,14 @@
 
 package org.apache.lucene.util;
 
+import java.io.Serializable;
+
 import java.util.Arrays;
 
 /**
  * Mutable bit set.
  */
-public class MutableBitSet extends AbstractBitSet/* implements Cloneable, Serializable */ {
+public class MutableBitSet extends AbstractBitSet implements Serializable /*, Cloneable */ {
     /** Default number of bits, <code>64</code>. */
     public static final long DEFAULT_NUM_BITS = 64;
 

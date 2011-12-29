@@ -17,10 +17,12 @@
 
 package org.apache.lucene.util;
 
+import java.io.Serializable;
+
 /**
  * Immutable bit set.
  */
-public final class ImmutableBitSet extends AbstractBitSet /* implements Serializable */{
+public final class ImmutableBitSet extends AbstractBitSet implements Serializable {
     private final long[] bits;
     private final long numBits;
     private final int wlen;
@@ -391,6 +393,8 @@ public final class ImmutableBitSet extends AbstractBitSet /* implements Serializ
     protected int wlen() {
         return wlen;
     }
+
+    // is it possible to move these statics to Abstract, or does that not make sense?
 
     /**
      * Return the cardinality of the logical NOT followed by AND of the two specified immutable bit sets.

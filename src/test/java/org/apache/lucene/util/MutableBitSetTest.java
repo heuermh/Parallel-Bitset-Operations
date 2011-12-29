@@ -20,6 +20,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.Serializable;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -238,5 +244,66 @@ public class MutableBitSetTest extends AbstractBitSetTest {
     @Test(expected=NullPointerException.class)
     public void testXorCountNullB() {
         MutableBitSet.xorCount(empty, null);
+    }
+
+    @Test
+    public void testSerializable() {
+        assertTrue(bitset instanceof Serializable);
+    }
+
+    @Test
+    public void testSerializeEmpty() throws Exception {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        ObjectOutputStream out = new ObjectOutputStream(buffer);
+        out.writeObject(empty);
+        out.close();
+
+        ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(buffer.toByteArray()));
+        Object dest = in.readObject();
+        in.close();
+
+        assertEquals(empty, (MutableBitSet) dest);
+    }
+
+    @Test
+    public void testSerializeFull() throws Exception {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        ObjectOutputStream out = new ObjectOutputStream(buffer);
+        out.writeObject(full);
+        out.close();
+
+        ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(buffer.toByteArray()));
+        Object dest = in.readObject();
+        in.close();
+
+        assertEquals(full, (MutableBitSet) dest);
+    }
+
+    @Test
+    public void testSerializePartial() throws Exception {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        ObjectOutputStream out = new ObjectOutputStream(buffer);
+        out.writeObject(partial);
+        out.close();
+
+        ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(buffer.toByteArray()));
+        Object dest = in.readObject();
+        in.close();
+
+        assertEquals(partial, (MutableBitSet) dest);
+    }
+
+    @Test
+    public void testSerializeHalf() throws Exception {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        ObjectOutputStream out = new ObjectOutputStream(buffer);
+        out.writeObject(half);
+        out.close();
+
+        ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(buffer.toByteArray()));
+        Object dest = in.readObject();
+        in.close();
+
+        assertEquals(half, (MutableBitSet) dest);
     }
 }
