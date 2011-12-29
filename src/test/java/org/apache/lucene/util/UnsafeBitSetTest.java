@@ -19,7 +19,11 @@ package org.apache.lucene.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -154,6 +158,98 @@ public class UnsafeBitSetTest extends AbstractBitSetTest {
     }
 
     @Test
+    public void testAndNotCount() {
+        assertEquals(0L, UnsafeBitSet.andNotCount(empty, empty));
+        assertEquals(0L, UnsafeBitSet.andNotCount(empty, partial));
+        assertEquals(0L, UnsafeBitSet.andNotCount(empty, full));
+        assertEquals((N / 2L), UnsafeBitSet.andNotCount(partial, empty));
+        assertEquals(0L, UnsafeBitSet.andNotCount(partial, partial));
+        assertEquals(0L, UnsafeBitSet.andNotCount(partial, full));
+        assertEquals(N, UnsafeBitSet.andNotCount(full, empty));
+        assertEquals((N / 2L), UnsafeBitSet.andNotCount(full, partial));
+        assertEquals(0L, UnsafeBitSet.andNotCount(full, full));
+    }
+
+    @Test(expected=NullPointerException.class)
+    public void testAndNotCountNullA() {
+        UnsafeBitSet.andNotCount(null, empty);
+    }
+
+    @Test(expected=NullPointerException.class)
+    public void testAndNotCountNullB() {
+        UnsafeBitSet.andNotCount(empty, null);
+    }
+
+    @Test
+    public void testAndCount() {
+        assertEquals(0L, UnsafeBitSet.andCount(empty, empty));
+        assertEquals(0L, UnsafeBitSet.andCount(empty, partial));
+        assertEquals(0L, UnsafeBitSet.andCount(empty, full));
+        assertEquals(0L, UnsafeBitSet.andCount(partial, empty));
+        assertEquals((N / 2L), UnsafeBitSet.andCount(partial, partial));
+        assertEquals((N / 2L), UnsafeBitSet.andCount(partial, full));
+        assertEquals(0L, UnsafeBitSet.andCount(full, empty));
+        assertEquals((N / 2L), UnsafeBitSet.andCount(full, partial));
+        assertEquals(N, UnsafeBitSet.andCount(full, full));
+    }
+
+    @Test(expected=NullPointerException.class)
+    public void testAndCountNullA() {
+        UnsafeBitSet.andCount(null, empty);
+    }
+
+    @Test(expected=NullPointerException.class)
+    public void testAndCountNullB() {
+        UnsafeBitSet.andCount(empty, null);
+    }
+
+    @Test
+    public void testOrCount() {
+        assertEquals(0L, UnsafeBitSet.orCount(empty, empty));
+        assertEquals((N / 2L), UnsafeBitSet.orCount(empty, partial));
+        assertEquals(N, UnsafeBitSet.orCount(empty, full));
+        assertEquals((N / 2L), UnsafeBitSet.orCount(partial, empty));
+        assertEquals((N / 2L), UnsafeBitSet.orCount(partial, partial));
+        assertEquals(N, UnsafeBitSet.orCount(partial, full));
+        assertEquals(N, UnsafeBitSet.orCount(full, empty));
+        assertEquals(N, UnsafeBitSet.orCount(full, partial));
+        assertEquals(N, UnsafeBitSet.orCount(full, full));
+    }
+
+    @Test(expected=NullPointerException.class)
+    public void testOrCountNullA() {
+        UnsafeBitSet.orCount(null, empty);
+    }
+
+    @Test(expected=NullPointerException.class)
+    public void testOrCountNullB() {
+        UnsafeBitSet.orCount(empty, null);
+    }
+
+    @Test
+    public void testXorCount() {
+        assertEquals(0L, UnsafeBitSet.xorCount(empty, empty));
+        assertEquals((N / 2L), UnsafeBitSet.xorCount(empty, partial));
+        assertEquals(N, UnsafeBitSet.xorCount(empty, full));
+        assertEquals((N / 2L), UnsafeBitSet.xorCount(partial, empty));
+        assertEquals(0L, UnsafeBitSet.xorCount(partial, partial));
+        assertEquals((N / 2L), UnsafeBitSet.xorCount(partial, full));
+        assertEquals(N, UnsafeBitSet.xorCount(full, empty));
+        assertEquals((N / 2L), UnsafeBitSet.xorCount(full, partial));
+        assertEquals(0L, UnsafeBitSet.xorCount(full, full));
+    }
+
+    @Test(expected=NullPointerException.class)
+    public void testXorCountNullA() {
+        UnsafeBitSet.xorCount(null, empty);
+    }
+
+    @Test(expected=NullPointerException.class)
+    public void testXorCountNullB() {
+        UnsafeBitSet.xorCount(empty, null);
+    }
+
+    @Test
     public void testSerializable() {
         assertTrue(bitset instanceof Serializable);
     }
@@ -208,6 +304,70 @@ public class UnsafeBitSetTest extends AbstractBitSetTest {
         out.close();
 
         ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(buffer.toByteArray()));
+        Object dest = in.readObject();
+        in.close();
+
+        assertEquals(half, (UnsafeBitSet) dest);
+    }
+
+    // regenerate serialized resources each time serialization format or value of N changes
+    //    and copy files to src/test/resources/org/apache/lucene/util
+    public void writeSerializedResources() throws Exception {
+        writeSerializedResource("unsafeEmpty.ser", empty);
+        writeSerializedResource("unsafeFull.ser", full);
+        writeSerializedResource("unsafePartial.ser", partial);
+        writeSerializedResource("unsafeHalf.ser", half);
+    }
+
+    private static void writeSerializedResource(final String name, final UnsafeBitSet bitset) {
+        ObjectOutputStream out = null;
+        try {
+            out = new ObjectOutputStream(new FileOutputStream(new File(name)));
+            out.writeObject(bitset);
+        }
+        catch (IOException e) {
+            fail(e.getMessage());
+        }
+        finally {
+            try {
+                out.close();
+            }
+            catch (Exception e) {
+                // ignore
+            }
+        }
+    }
+
+    @Test
+    public void testSerializationCompatibilityEmpty() throws Exception {
+        ObjectInputStream in = new ObjectInputStream(getClass().getResourceAsStream("unsafeEmpty.ser"));
+        Object dest = in.readObject();
+        in.close();
+
+        assertEquals(empty, (UnsafeBitSet) dest);
+    }
+
+    @Test
+    public void testSerializationCompatibilityFull() throws Exception {
+        ObjectInputStream in = new ObjectInputStream(getClass().getResourceAsStream("unsafeFull.ser"));
+        Object dest = in.readObject();
+        in.close();
+
+        assertEquals(full, (UnsafeBitSet) dest);
+    }
+
+    @Test
+    public void testSerializationCompatibilityPartial() throws Exception {
+        ObjectInputStream in = new ObjectInputStream(getClass().getResourceAsStream("unsafePartial.ser"));
+        Object dest = in.readObject();
+        in.close();
+
+        assertEquals(partial, (UnsafeBitSet) dest);
+    }
+
+    @Test
+    public void testSerializationCompatibilityHalf() throws Exception {
+        ObjectInputStream in = new ObjectInputStream(getClass().getResourceAsStream("unsafeHalf.ser"));
         Object dest = in.readObject();
         in.close();
 

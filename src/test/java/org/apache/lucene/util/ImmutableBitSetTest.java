@@ -21,7 +21,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -559,6 +563,70 @@ public final class ImmutableBitSetTest extends AbstractBitSetTest {
         out.close();
 
         ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(buffer.toByteArray()));
+        Object dest = in.readObject();
+        in.close();
+
+        assertEquals(half, (ImmutableBitSet) dest);
+    }
+
+    // regenerate serialized resources each time serialization format or value of N changes
+    //    and copy files to src/test/resources/org/apache/lucene/util
+    public void writeSerializedResources() throws Exception {
+        writeSerializedResource("immutableEmpty.ser", empty);
+        writeSerializedResource("immutableFull.ser", full);
+        writeSerializedResource("immutablePartial.ser", partial);
+        writeSerializedResource("immutableHalf.ser", half);
+    }
+
+    private static void writeSerializedResource(final String name, final ImmutableBitSet bitset) {
+        ObjectOutputStream out = null;
+        try {
+            out = new ObjectOutputStream(new FileOutputStream(new File(name)));
+            out.writeObject(bitset);
+        }
+        catch (IOException e) {
+            fail(e.getMessage());
+        }
+        finally {
+            try {
+                out.close();
+            }
+            catch (Exception e) {
+                // ignore
+            }
+        }
+    }
+
+    @Test
+    public void testSerializationCompatibilityEmpty() throws Exception {
+        ObjectInputStream in = new ObjectInputStream(getClass().getResourceAsStream("immutableEmpty.ser"));
+        Object dest = in.readObject();
+        in.close();
+
+        assertEquals(empty, (ImmutableBitSet) dest);
+    }
+
+    @Test
+    public void testSerializationCompatibilityFull() throws Exception {
+        ObjectInputStream in = new ObjectInputStream(getClass().getResourceAsStream("immutableFull.ser"));
+        Object dest = in.readObject();
+        in.close();
+
+        assertEquals(full, (ImmutableBitSet) dest);
+    }
+
+    @Test
+    public void testSerializationCompatibilityPartial() throws Exception {
+        ObjectInputStream in = new ObjectInputStream(getClass().getResourceAsStream("immutablePartial.ser"));
+        Object dest = in.readObject();
+        in.close();
+
+        assertEquals(partial, (ImmutableBitSet) dest);
+    }
+
+    @Test
+    public void testSerializationCompatibilityHalf() throws Exception {
+        ObjectInputStream in = new ObjectInputStream(getClass().getResourceAsStream("immutableHalf.ser"));
         Object dest = in.readObject();
         in.close();
 
