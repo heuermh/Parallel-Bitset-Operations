@@ -87,7 +87,11 @@ public abstract class AbstractBitSet {
      *    in this bit set
      */
     public abstract boolean intersects(AbstractBitSet other);
-    //public abstract void forEach(Procedure<Long> procedure);
+
+
+    //public abstract void set(Predicate<Long> predicate); ?
+    //public abstract void forEachSetBit(Procedure<Long> procedure);
+    //public abstract void forEachUnsetBit(Procedure<Long> procedure);
 
 
     // optional operations
@@ -203,6 +207,7 @@ public abstract class AbstractBitSet {
 
 
     // logical operations
+    //   is it possible to return the specific subclass?
 
     /**
      * Perform a logical XOR of the specified bit set and this bit set.
@@ -213,7 +218,7 @@ public abstract class AbstractBitSet {
     public abstract AbstractBitSet xor(AbstractBitSet other);
 
     /**
-     * Perform a logical AND of the specified bit set and this bit set.  Also known as an union operation.
+     * Perform a logical AND of the specified bit set and this bit set.  Also known as a union operation.
      *
      * @param other bit set to AND with this bit set, must not be null
      * @return this bit set or a copy of this bit set, for method chaining
