@@ -18,6 +18,7 @@ package org.apache.lucene.util;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -247,6 +248,151 @@ public class UnsafeBitSetTest extends AbstractBitSetTest {
     @Test(expected=NullPointerException.class)
     public void testXorCountNullB() {
         UnsafeBitSet.xorCount(empty, null);
+    }
+
+    @Test
+    public void testXor() {
+        AbstractBitSet emptyXor = empty.xor(empty);
+        assertSame(empty, emptyXor);
+        assertTrue(emptyXor.isEmpty());
+
+        // cannot chain assertions, empty is mutable
+        //assertEquals((N / 2L), empty.xor(partial).cardinality());
+        //assertEquals(N, empty.xor(full).cardinality());
+        //assertEquals(N / 4L, empty.xor(half).cardinality());
+
+        AbstractBitSet partialXor = partial.xor(partial);
+        assertSame(partial, partialXor);
+        assertTrue(partialXor.isEmpty());
+
+        //assertEquals((N / 2L), partial.xor(empty).cardinality());
+        //assertEquals((N / 2L), partial.xor(full).cardinality());
+        //assertEquals(3L * N / 4L, partial.xor(half).cardinality());
+
+        AbstractBitSet fullXor = full.xor(full);
+        assertSame(full, fullXor);
+        assertTrue(fullXor.isEmpty());
+
+        //assertEquals(N, full.xor(empty).cardinality());
+        //assertEquals((N / 2L), full.xor(partial).cardinality());
+        //assertEquals(3L * N / 4L, full.xor(half).cardinality());
+
+        AbstractBitSet halfXor = half.xor(half);
+        assertSame(half, halfXor);
+        assertTrue(halfXor.isEmpty());
+
+        //assertEquals(N / 4L, half.xor(empty).cardinality());
+        //assertEquals(3L * N / 4L, half.xor(partial).cardinality());
+        //assertEquals(3L * N / 4L, half.xor(full).cardinality());
+    }
+
+    @Test
+    public void testAnd() {
+        AbstractBitSet emptyAnd = empty.and(empty);
+        assertSame(empty, emptyAnd);
+        assertTrue(emptyAnd.isEmpty());
+
+        //assertTrue(empty.and(partial).isEmpty());
+        //assertTrue(empty.and(full).isEmpty());
+        //assertTrue(empty.and(half).isEmpty());
+
+        AbstractBitSet partialAnd = partial.and(partial);
+        assertSame(partial, partialAnd);
+        assertEquals((N / 2L), partialAnd.cardinality());
+
+        //assertTrue(partial.and(empty).isEmpty());
+        //assertEquals((N / 2L), partial.and(full).cardinality());
+        //assertTrue(partial.and(half).isEmpty());
+
+        AbstractBitSet fullAnd = full.and(full);
+        assertSame(full, fullAnd);
+        assertEquals(N, fullAnd.cardinality());
+
+        //assertTrue(full.and(empty).isEmpty());
+        //assertEquals((N / 2L), full.and(partial).cardinality());
+        //assertEquals(N / 4L, full.and(half).cardinality());
+
+        AbstractBitSet halfAnd = half.and(half);
+        assertSame(half, halfAnd);
+        assertEquals(N / 4L, halfAnd.cardinality());
+
+        //assertTrue(half.and(empty).isEmpty());
+        //assertTrue(half.and(partial).isEmpty());
+        //assertEquals(N / 4L, half.and(full).cardinality());
+    }
+
+    @Test
+    public void testOr() {
+        AbstractBitSet emptyOr = empty.or(empty);
+        assertSame(empty, emptyOr);
+        assertTrue(emptyOr.isEmpty());
+
+        //assertEquals((N / 2L), empty.or(partial).cardinality());
+        //assertEquals(N, empty.or(full).cardinality());
+        //assertEquals(N / 4L, empty.or(half).cardinality());
+
+        AbstractBitSet partialOr = partial.or(partial);
+        assertSame(partial, partialOr);
+        assertEquals((N / 2L), partial.or(partial).cardinality());
+
+        //assertEquals((N / 2L), partial.or(empty).cardinality());
+        //assertEquals(N, partial.or(full).cardinality());
+        //assertEquals(3L * N / 4L, partial.or(half).cardinality());
+
+        MutableBitSet m = new MutableBitSet(N);
+        m.set(0L, (N / 2L));
+        assertEquals(N, partial.or(m).cardinality());
+
+        AbstractBitSet fullOr = full.or(full);
+        assertSame(full, fullOr);
+        assertEquals(N, fullOr.cardinality());
+
+        //assertEquals(N, full.or(empty).cardinality());
+        //assertEquals(N, full.or(partial).cardinality());
+        //assertEquals(N, full.or(half).cardinality());
+
+        AbstractBitSet halfOr = half.or(half);
+        assertSame(half, halfOr);
+        assertEquals(N / 4L, halfOr.cardinality());
+
+        //assertEquals(N / 4L, half.or(empty).cardinality());
+        //assertEquals(3L * N / 4L, half.or(partial).cardinality());
+        //assertEquals(N, half.or(full).cardinality());
+    }
+
+    @Test
+    public void testAndNot() {
+        AbstractBitSet emptyAndNot = empty.andNot(empty);
+        assertSame(empty, emptyAndNot);
+        assertTrue(emptyAndNot.isEmpty());
+
+        //assertTrue(empty.andNot(partial).isEmpty());
+        //assertTrue(empty.andNot(full).isEmpty());
+        //assertTrue(empty.andNot(half).isEmpty());
+
+        AbstractBitSet partialAndNot = partial.andNot(partial);
+        assertSame(partial, partialAndNot);
+        assertTrue(partialAndNot.isEmpty());
+
+        //assertEquals((N / 2L), partial.andNot(empty).cardinality());
+        //assertTrue(partial.andNot(full).isEmpty());
+        //assertEquals(N / 2L, partial.andNot(half).cardinality());
+
+        AbstractBitSet fullAndNot = full.andNot(full);
+        assertSame(full, fullAndNot);
+        assertTrue(fullAndNot.isEmpty());
+
+        //assertEquals(N, full.andNot(empty).cardinality());
+        //assertEquals((N / 2L), full.andNot(partial).cardinality());
+        //assertEquals(3L * N / 4L, full.andNot(half).cardinality());
+
+        AbstractBitSet halfAndNot = half.andNot(half);
+        assertSame(half, halfAndNot);
+        assertTrue(halfAndNot.isEmpty());
+
+        //assertEquals(N / 4L, half.andNot(empty).cardinality());
+        //assertEquals(N / 4L, half.andNot(partial).cardinality());
+        //assertTrue(half.andNot(full).isEmpty());
     }
 
     @Test

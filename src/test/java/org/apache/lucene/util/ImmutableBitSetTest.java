@@ -303,7 +303,6 @@ public final class ImmutableBitSetTest extends AbstractBitSetTest {
 
     @Test
     public void testOr() {
-        // just forwards to union
         AbstractBitSet emptyOr = empty.or(empty);
         assertNotNull(emptyOr);
         assertNotSame(empty, emptyOr);

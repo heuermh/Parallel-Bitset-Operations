@@ -20,7 +20,7 @@ package org.apache.lucene.util;
 /**
  * Unsafe bit set.
  */
-public class UnsafeBitSet extends MutableBitSet/* implements Cloneable, Serializable */ {
+public class UnsafeBitSet extends MutableBitSet {
 
     /**
      * Create a new unsafe bit set with the default number of bits.
