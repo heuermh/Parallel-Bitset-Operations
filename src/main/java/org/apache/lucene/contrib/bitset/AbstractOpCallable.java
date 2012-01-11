@@ -21,7 +21,7 @@ package org.apache.lucene.contrib.bitset;
 
 import java.util.concurrent.Callable;
 
-import org.apache.lucene.util.ImmutableBitSet;
+import org.dishevelled.bitset.ImmutableBitSet;
 
 abstract class AbstractOpCallable<T> implements Callable<T> {
 

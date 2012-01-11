@@ -23,8 +23,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.lucene.contrib.bitset.ops.ComparisonOp;
-import org.apache.lucene.util.ImmutableBitSet;
-import org.apache.lucene.util.MutableBitSet;
+
+import org.dishevelled.bitset.ImmutableBitSet;
+import org.dishevelled.bitset.MutableBitSet;
 
 class ComparisonOpCallable<T> extends AbstractOpCallable<T[]> {
 

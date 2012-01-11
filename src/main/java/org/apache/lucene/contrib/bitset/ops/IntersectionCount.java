@@ -19,8 +19,8 @@
 
 package org.apache.lucene.contrib.bitset.ops;
 
-import org.apache.lucene.util.ImmutableBitSet;
-import org.apache.lucene.util.MutableBitSet;
+import org.dishevelled.bitset.ImmutableBitSet;
+import org.dishevelled.bitset.MutableBitSet;
 
 public final class IntersectionCount implements ComparisonOp<Long> { // --> AndCount
 

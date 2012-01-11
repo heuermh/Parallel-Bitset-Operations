@@ -21,9 +21,9 @@ package org.apache.lucene.contrib.bitset;
 
 import org.apache.lucene.contrib.bitset.ops.IntersectionCount;
 import org.apache.lucene.contrib.bitset.ops.OR;
-import org.apache.lucene.util.AbstractBitSet;
-import org.apache.lucene.util.ImmutableBitSet;
-import org.apache.lucene.util.MutableBitSet;
+import org.dishevelled.bitset.AbstractBitSet;
+import org.dishevelled.bitset.ImmutableBitSet;
+import org.dishevelled.bitset.MutableBitSet;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;

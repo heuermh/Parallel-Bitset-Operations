@@ -19,8 +19,8 @@
 
 package org.apache.lucene.contrib.bitset.ops;
 
-import org.apache.lucene.util.ImmutableBitSet;
-import org.apache.lucene.util.MutableBitSet;
+import org.dishevelled.bitset.ImmutableBitSet;
+import org.dishevelled.bitset.MutableBitSet;
 
 /**
  * An operation that could easily be split in parts, producing partial results to accumulate at the end

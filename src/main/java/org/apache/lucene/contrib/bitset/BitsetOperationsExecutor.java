@@ -21,8 +21,9 @@ package org.apache.lucene.contrib.bitset;
 
 import org.apache.lucene.contrib.bitset.ops.AssociativeOp;
 import org.apache.lucene.contrib.bitset.ops.ComparisonOp;
-import org.apache.lucene.util.MutableBitSet;
-import org.apache.lucene.util.ImmutableBitSet;
+
+import org.dishevelled.bitset.MutableBitSet;
+import org.dishevelled.bitset.ImmutableBitSet;
 
 import java.util.Collection;
 import java.util.List;

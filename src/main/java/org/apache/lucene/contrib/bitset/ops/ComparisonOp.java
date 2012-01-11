@@ -19,8 +19,8 @@
 
 package org.apache.lucene.contrib.bitset.ops;
 
-import org.apache.lucene.util.ImmutableBitSet;
-import org.apache.lucene.util.MutableBitSet;
+import org.dishevelled.bitset.ImmutableBitSet;
+import org.dishevelled.bitset.MutableBitSet;
 
 /**
  * An operation that compares the given bitset with the content of an accumulator. The target bitset loads the accumulator that is compared with the toCompare bitset

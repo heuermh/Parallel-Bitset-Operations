@@ -20,8 +20,9 @@
 package org.apache.lucene.contrib.bitset;
 
 import org.apache.lucene.contrib.bitset.ops.AssociativeOp;
-import org.apache.lucene.util.ImmutableBitSet;
-import org.apache.lucene.util.MutableBitSet;
+
+import org.dishevelled.bitset.ImmutableBitSet;
+import org.dishevelled.bitset.MutableBitSet;
 
 class AssociativeOpCallable extends AbstractOpCallable<MutableBitSet> {
 

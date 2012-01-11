@@ -23,8 +23,8 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.concurrent.Callable;
 
-import org.apache.lucene.util.AbstractBitSet;
-import org.apache.lucene.util.ImmutableBitSet;
+import org.dishevelled.bitset.AbstractBitSet;
+import org.dishevelled.bitset.ImmutableBitSet;
 
 abstract class BitSetSlicer<T> {
 
